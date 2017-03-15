@@ -86,7 +86,14 @@ class Client {
   private byte[] gremlin(double damageProb, byte[] packet) {
     if (packetIsDamaged(damageProb)) {
       int numBytesDamaged = determineNumBytesDamaged();
+      for (byte b : packet) {
+        if (byteIsDamaged()) {
+          b -= 1;
+        }
+      }
+      return packet;
     }
+    // else packet is not damaged
     return packet;
   }
 
@@ -101,12 +108,24 @@ class Client {
     return false;
   }
 
+  private boolean byteIsDamaged() {
+    Random rand = new Random();
+    int val = rand.nextInt(2);
+
+    // .5 prob byte is damaged
+    if (val == 0) return true;
+    return false;
+  }
+
   private int determineNumBytesDamaged() {
     Random rand = new Random();
     int val = rand.nextInt(11);
 
+    // .5 prob 1 packet damaged
     if (val <= 5) return 1;
+    // .3 prob 1 packet damaged
     else if (val <= 8) return 2;
-    else return 3;
+    // .2 prob 1 packet damaged
+    return 3;
   }
 }

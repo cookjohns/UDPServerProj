@@ -7,13 +7,16 @@ import java.nio.file.*;
 class Client {
 
   public static final int PACKET_SIZE = 128;
-  public int damageProb = 0;
 
   public static void main(String[] args) throws Exception {
+
     // get damage probability
-    System.out.print("Enter damage probability: ");
-    BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-    damageProb = input.readLine();
+    double damageProb = 0.0;
+    do {
+      System.out.print("Enter damage probability (in range 0-1): ");
+      BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+      damageProb = Double.parseDouble(input.readLine());
+    } while (damageProb < 0 || damageProb > 1);
 
     InetAddress ipAddr = InetAddress.getByName("localhost");
     int portNumber = 10008;
@@ -79,7 +82,7 @@ class Client {
     return 0;
   }
 
-  private void gremlin(int damageProb, byte[] packet) {
+  private void gremlin(byte[] packet) {
 
   }
 }

@@ -10,10 +10,10 @@ class Client {
 
   public static void main(String[] args) throws Exception {
     BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-    
+
     InetAddress ipAddr = InetAddress.getByName("localhost");
     int portNumber = 10008;
-    
+
     DatagramSocket clientSocket = new DatagramSocket();
 
     byte[] sendData    = new byte[1024];
@@ -21,7 +21,7 @@ class Client {
 
     //String sentence = input.readLine();
     //sendData = sentence.getBytes();
-    
+
     byte[] message = Files.readAllBytes(Paths.get("message.txt"));
 
     // DatagramPacket sendPacket = new DatagramPacket(
@@ -43,7 +43,7 @@ class Client {
 
     String modifiedSentence = new String(receivePacket.getData());
     System.out.println("FROM SERVER:" + modifiedSentence);
-    
+
     clientSocket.close();
 
   }
@@ -71,7 +71,7 @@ class Client {
     }
   }
 
-  private int computeChecksum() {
+  private int errorCheck() {
     return 0;
   }
 

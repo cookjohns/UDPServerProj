@@ -11,7 +11,7 @@ class Server {
 	{
 		int portNumber = 10008;
 		DatagramSocket serverSocket = new DatagramSocket(portNumber);
-	
+
 		byte[] receiveData = new byte[1024];
 		byte[] sendData = new byte[1024];
 
@@ -61,7 +61,7 @@ class Server {
 	    }
 	}
 
-	private int computeChecksum() {
+	private int errorCheck() {
 		return 0;
 	}
 }

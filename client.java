@@ -85,7 +85,7 @@ class Client {
 
   private byte[] gremlin(double damageProb, byte[] packet) {
     if (packetIsDamaged(damageProb)) {
-
+      int numBytesDamaged = determineNumBytesDamaged();
     }
     return packet;
   }
@@ -99,5 +99,14 @@ class Client {
 
     if (val <= prob) return true;
     return false;
+  }
+
+  private int determineNumBytesDamaged() {
+    Random rand = new Random();
+    int val = rand.nextInt(11);
+
+    if (val <= 5) return 1;
+    else if (val <= 8) return 2;
+    else return 3;
   }
 }

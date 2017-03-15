@@ -1,6 +1,7 @@
 import java.net.*;
 import java.io.*;
 import java.nio.file.*;
+import java.util.Random;
 
 // port #s 10008-10011
 
@@ -82,7 +83,21 @@ class Client {
     return 0;
   }
 
-  private void gremlin(byte[] packet) {
+  private byte[] gremlin(double damageProb, byte[] packet) {
+    if (packetIsDamaged(damageProb)) {
 
+    }
+    return packet;
+  }
+
+  private boolean packetIsDamaged(double damageProb) {
+    // get probability as percentage in range 0-100
+    double prob = damageProb * 100;
+    // get random int in range 0-100
+    Random rand = new Random();
+    int val = rand.nextInt(101);
+
+    if (val <= prob) return true;
+    return false;
   }
 }

@@ -48,7 +48,7 @@ class Client {
 		if (receivePacket.getLength ()== 1) break;
     
 		String modifiedSentence = new String(receivePacket.getData());
-   	System.out.println("FROM SERVER:" + modifiedSentence);
+   	System.out.println("FROM SERVER:\n" + modifiedSentence);
 	}
     
 	clientSocket.close();

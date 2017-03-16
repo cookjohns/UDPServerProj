@@ -27,20 +27,23 @@ class Server {
 
 			InetAddress ipAddress = receivePacket.getAddress();
 			int clientPort = receivePacket.getPort();
-			
-			String message = httpHeader();
-			String file  = Files.readAllLines(Paths.get("TestFile.html")).toString();
-			//To remove enclosing [ ] brackets 
-			file = file.substring(1, file.length() - 1);
-			message += file;		
-			sendMessage(message.getBytes(), ipAddress, clientPort, serverSocket);
+				
+			byte[] message = concat(httpHeader(), Files.readAllBytes(Paths.get("TestFile.html")));
+			sendMessage(message, ipAddress, clientPort, serverSocket);
 		}
 	}
 
-	private static String httpHeader() {
+	private static byte[] httpHeader() {
 		String out = "HTTP/1.0 Document Follows \r\n";
 		out += "Content-Type: text/plain\r\n";
 		out += "Content-Length: xxx\r\n\r\n";
+		return out.getBytes();
+	}
+
+	private static byte[] concat(byte[] a, byte[] b) {
+		byte[] out = new byte[a.length + b.length];
+		System.arraycopy(a, 0, out, 0, a.length);
+		System.arraycopy(b, 0, out, a.length, b.length);
 		return out;
 	}
 

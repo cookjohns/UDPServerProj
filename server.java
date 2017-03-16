@@ -28,9 +28,20 @@ class Server {
 			InetAddress ipAddress = receivePacket.getAddress();
 			int clientPort = receivePacket.getPort();
 			
-			byte[] message = Files.readAllBytes(Paths.get("message.txt"));		
-			sendMessage(message, ipAddress, clientPort, serverSocket);
+			String message = httpHeader();
+			String file  = Files.readAllLines(Paths.get("TestFile.html")).toString();
+			//To remove enclosing [ ] brackets 
+			file = file.substring(1, file.length() - 1);
+			message += file;		
+			sendMessage(message.getBytes(), ipAddress, clientPort, serverSocket);
 		}
+	}
+
+	private static String httpHeader() {
+		String out = "HTTP/1.0 Document Follows \r\n";
+		out += "Content-Type: text/plain\r\n";
+		out += "Content-Length: xxx\r\n\r\n";
+		return out;
 	}
 
 	private static byte[] nextPacket(byte[] message, int readHead) {

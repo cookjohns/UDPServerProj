@@ -35,11 +35,6 @@ class Server {
 
 	private static byte[] nextPacket(byte[] message, int readHead) {
 		byte[] packet = new byte[PACKET_SIZE];
-		//if (message.length <= readHead + PACKET_SIZE) {
-		//	packet = new byte[message.length - readHead];
-		//} else {
-		//	packet = new byte[PACKET_SIZE];
-		//}
 		for (int i = 0; i < packet.length; i++) {
 			if (readHead + i == message.length) break;
 			packet[i] = message[readHead + i];
@@ -55,9 +50,15 @@ class Server {
 	      socket.send(sendPacket);
 	      readHead += PACKET_SIZE;
 	    }
+		byte[] nullPacket  = new byte[1];
+		nullPacket[0] = 0;
+		DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
+	    socket.send(sendPacket);
+
 	}
 
 	private int errorCheck() {
 		return 0;
 	}
 }
+

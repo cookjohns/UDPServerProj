@@ -24,8 +24,8 @@ class Client {
 
     DatagramSocket clientSocket = new DatagramSocket();
 
-    byte[] sendData    = new byte[1024];
-    byte[] receiveData = new byte[1024];
+    byte[] sendData    = new byte[PACKET_SIZE];
+    byte[] receiveData = new byte[PACKET_SIZE];
 
     //String sentence = input.readLine();
     //sendData = sentence.getBytes();
@@ -41,18 +41,21 @@ class Client {
     clientSocket.send(sendPacket);
 
 	while(true) {
+		receiveData = new byte[PACKET_SIZE];
 		DatagramPacket receivePacket = new DatagramPacket(
               receiveData, receiveData.length);
     		clientSocket.receive(receivePacket);
-    		String modifiedSentence = new String(receivePacket.getData());
-   		System.out.println("FROM SERVER:" + modifiedSentence);
+		if (receivePacket.getLength ()== 1) break;
+    
+		String modifiedSentence = new String(receivePacket.getData());
+   	System.out.println("FROM SERVER:" + modifiedSentence);
 	}
     
-	//clientSocket.close();
+	clientSocket.close();
 
   }
-
-  private int errorCheck() {
+  
+	private int errorCheck() {
     return 0;
   }
 

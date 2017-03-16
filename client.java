@@ -30,53 +30,26 @@ class Client {
     //String sentence = input.readLine();
     //sendData = sentence.getBytes();
 
-    byte[] message = Files.readAllBytes(Paths.get("message.txt"));
+    //byte[] message = Files.readAllBytes(Paths.get("message.txt"));
 
-    // DatagramPacket sendPacket = new DatagramPacket(
-    //     sendData, sendData.length, ipAddr, portNumber);
+	String request = "GET TestFile.html HTTP/1.0";
+	sendData = request.getBytes(); 
 
-    // clientSocket.send(sendPacket);
+    DatagramPacket sendPacket = new DatagramPacket(
+         sendData, sendData.length, ipAddr, portNumber);
 
+    clientSocket.send(sendPacket);
 
-    sendMessage(message, ipAddr, portNumber, clientSocket);
-
-
-
-    DatagramPacket receivePacket = new DatagramPacket(
+	while(true) {
+		DatagramPacket receivePacket = new DatagramPacket(
               receiveData, receiveData.length);
+    		clientSocket.receive(receivePacket);
+    		String modifiedSentence = new String(receivePacket.getData());
+   		System.out.println("FROM SERVER:" + modifiedSentence);
+	}
+    
+	//clientSocket.close();
 
-
-    clientSocket.receive(receivePacket);
-
-
-    String modifiedSentence = new String(receivePacket.getData());
-    System.out.println("FROM SERVER:" + modifiedSentence);
-
-    clientSocket.close();
-
-  }
-
-  private static byte[] nextPacket(byte[] message, int readHead) {
-    byte[] packet;
-    if (message.length <= readHead + PACKET_SIZE) {
-      packet = new byte[message.length - readHead];
-    } else {
-      packet = new byte[PACKET_SIZE];
-    }
-    for (int i = 0; i < packet.length; i++) {
-      packet[i] = message[readHead + i];
-    }
-    return packet;
-  }
-
-  private static void sendMessage(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
-    int readHead = 0;
-    while (readHead < message.length) {
-      byte[] packet = nextPacket(message, readHead);
-      DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
-      socket.send(sendPacket);
-      readHead += PACKET_SIZE;
-    }
   }
 
   private int errorCheck() {

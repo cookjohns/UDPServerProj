@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.nio.file.*;
 
 // port #s 10008-10011
 
@@ -22,30 +23,25 @@ class Server {
 
 			String sentence = new String(receivePacket.getData());
 
-			//System.out.println("Message recieved: " + sentence);
+			System.out.println("Message recieved: " + sentence);
 
 			InetAddress ipAddress = receivePacket.getAddress();
 			int clientPort = receivePacket.getPort();
-			String capitalizeSentence = sentence.toUpperCase();
-			sendData = capitalizeSentence.getBytes();
-
-			DatagramPacket sendPacket = new DatagramPacket(
-				sendData, sendData.length, ipAddress, clientPort);
-
-			serverSocket.send(sendPacket);
-
+			
+			byte[] message = Files.readAllBytes(Paths.get("message.txt"));		
+			sendMessage(message, ipAddress, clientPort, serverSocket);
 		}
-
 	}
 
-	private byte[] nextPacket(byte[] message, int readHead) {
-		byte[] packet;
-		if (message.length <= readHead + PACKET_SIZE) {
-			packet = new byte[message.length - readHead];
-		} else {
-			packet = new byte[PACKET_SIZE];
-		}
+	private static byte[] nextPacket(byte[] message, int readHead) {
+		byte[] packet = new byte[PACKET_SIZE];
+		//if (message.length <= readHead + PACKET_SIZE) {
+		//	packet = new byte[message.length - readHead];
+		//} else {
+		//	packet = new byte[PACKET_SIZE];
+		//}
 		for (int i = 0; i < packet.length; i++) {
+			if (readHead + i == message.length) break;
 			packet[i] = message[readHead + i];
 		}
 		return packet;

@@ -41,6 +41,8 @@ class Client {
 
     clientSocket.send(sendPacket);
 
+    int curPacketSeqNum = 0;
+
     while(true) {
       receiveData = new byte[PACKET_SIZE];
       DatagramPacket receivePacket = new DatagramPacket(receiveData,
@@ -50,15 +52,20 @@ class Client {
 
       receiveData = gremlin(damageProb, receiveData);
       boolean packetIsValid = errorCheck(receiveData);
+      // if (!packetIsValid) System.out.print("Packet number " + curPacketSeqNum
+        // + " contains an error.\n");
 
       String modifiedSentence = new String(receivePacket.getData());
       System.out.println("FROM SERVER:\n" + modifiedSentence);
+      curPacketSeqNum++;
     }
 
     clientSocket.close();
   }
 
   private static boolean errorCheck(byte[] packet) {
+    System.out.println(getChecksum(packet));
+    System.out.println(sumBytesInMessage(packet));
     return getChecksum(packet) == sumBytesInMessage(packet);
   }
 

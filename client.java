@@ -82,7 +82,7 @@ class Client {
       int index = 0;
 
       while (numBytesToDamage > 0) {
-        // reset and scan through again if necessary
+ 	// reset and scan through again if necessary
         if (index == PACKET_SIZE) index = 0;
         if (!listOfDamagedBytes.contains(index) && byteShouldBeDamaged()) {
           // damage packet
@@ -91,6 +91,7 @@ class Client {
           numBytesToDamage--;
           listOfDamagedBytes.add(index);
         }
+		index ++;
       }
       return packet;
     }

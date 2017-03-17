@@ -64,7 +64,7 @@ class Server {
 	}
 
 	private static void sendMessage(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
-	    int readHead = 0;
+	    int readHead = -4;
 	    while (readHead < message.length+1) {
 	      byte[] packet = nextPacket(message, readHead);
 	      DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);

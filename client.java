@@ -49,7 +49,7 @@ class Client {
       if (receivePacket.getLength() == 1) break;
 
       receiveData = gremlin(damageProb, receiveData);
-      boolean packetIsValid = errorCheck(receivePacket);
+      boolean packetIsValid = errorCheck(receiveData);
 
       String modifiedSentence = new String(receivePacket.getData());
       System.out.println("FROM SERVER:\n" + modifiedSentence);
@@ -58,8 +58,8 @@ class Client {
     clientSocket.close();
   }
 
-  private static boolean errorCheck(DatagramPacket packet) {
-    return true;
+  private static boolean errorCheck(byte[] packet) {
+    return getChecksum(packet) == sumBytesInMessage(packet);
   }
 
   private static byte[] gremlin(double damageProb, byte[] packet) {
@@ -110,9 +110,15 @@ class Client {
     return rand.nextInt(PACKET_SIZE);
   }
 
-  private static int sumBytesInPacket(byte[] packet) {
+  private static int getChecksum(byte[] packet) {
+    int total = 0;
+    for (int i = 0; i < 4; i++) total += packet[i];
+    return total;
+  }
+
+  private static int sumBytesInMessage(byte[] packet) {
 		int total = 0;
-		for (byte b : packet) total += b;
+		for (int i = 4; i < PACKET_SIZE; i++) total += packet[i];
 		return total;
 	}
 }

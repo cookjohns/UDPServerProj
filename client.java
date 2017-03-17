@@ -47,7 +47,7 @@ class Client {
     		clientSocket.receive(receivePacket);
 		if (receivePacket.getLength() == 1) break;
 
-    // gremlin(receivePacket);
+    receiveData = gremlin(damageProb, receiveData);
     // errorCheck(receivePacket);
 
 		String modifiedSentence = new String(receivePacket.getData());
@@ -62,7 +62,7 @@ class Client {
     return 0;
   }
 
-  private byte[] gremlin(double damageProb, byte[] packet) {
+  private static byte[] gremlin(double damageProb, byte[] packet) {
     if (packetIsDamaged(damageProb)) {
       int numBytesDamaged = determineNumBytesDamaged();
       for (byte b : packet) {
@@ -76,7 +76,7 @@ class Client {
     return packet;
   }
 
-  private boolean packetIsDamaged(double damageProb) {
+  private static boolean packetIsDamaged(double damageProb) {
     // get probability as percentage in range 0-100
     double prob = damageProb * 100;
     // get random int in range 0-100
@@ -87,7 +87,7 @@ class Client {
     return false;
   }
 
-  private boolean byteIsDamaged() {
+  private static boolean byteIsDamaged() {
     Random rand = new Random();
     int val = rand.nextInt(2);
 
@@ -96,7 +96,7 @@ class Client {
     return false;
   }
 
-  private int determineNumBytesDamaged() {
+  private static int determineNumBytesDamaged() {
     Random rand = new Random();
     return rand.nextInt(PACKET_SIZE);
   }

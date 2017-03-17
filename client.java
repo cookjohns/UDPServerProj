@@ -11,7 +11,11 @@ import java.util.HashSet;
 class Client {
 
   public static final int PACKET_SIZE = 128;
-
+	
+	// for writing to file
+	private static boolean readHeader = true;
+	private static DataOutputStream saveFile;
+	
   public static void main(String[] args) throws Exception {
 
     // get damage probability
@@ -24,6 +28,9 @@ class Client {
 
     InetAddress ipAddr = InetAddress.getByName("localhost");
     int portNumber = 10008;
+
+	FileOutputStream filestream = new FileOutputStream("sampleOut.html");
+	saveFile = new DataOutputStream(filestream);	
 
     DatagramSocket clientSocket = new DatagramSocket();
 
@@ -57,13 +64,28 @@ class Client {
       // if (!packetIsValid) System.out.print("Packet number " + curPacketSeqNum
         // + " contains an error.\n");
 
-      String modifiedSentence = new String(receivePacket.getData());
+  		writePacketToFile(receiveData);    
+	
+			String modifiedSentence = new String(receivePacket.getData());
       System.out.println("FROM SERVER:\n" + modifiedSentence);
       curPacketSeqNum++;
     }
-
+	saveFile.close();
+	filestream.close();
     clientSocket.close();
   }
+
+	private static void writePacketToFile(byte[] data) throws Exception {
+		int numLines = 0;
+		for (int i = 4; i < data.length; i++) {
+			if (readHeader) {
+				if (data[i] == '\n') numLines ++;
+				if (numLines == 4) readHeader = false;
+			} else {
+				saveFile.writeByte(data[i]);
+			}
+		}
+	}
 
   private static boolean errorCheck(byte[] packet) {
     int checksum   = getChecksum(packet);

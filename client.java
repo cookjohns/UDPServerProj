@@ -2,6 +2,7 @@ import java.net.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.Random;
+import java.util.HashSet;
 
 // port #s 10008-10011
 
@@ -64,10 +65,19 @@ class Client {
 
   private static byte[] gremlin(double damageProb, byte[] packet) {
     if (packetIsDamaged(damageProb)) {
-      int numBytesDamaged = determineNumBytesDamaged();
-      for (byte b : packet) {
-        if (byteIsDamaged()) {
-          b -= 1;
+      int numBytesToDamage = determineNumBytesDamaged();
+      HashSet<Integer> listOfDamagedBytes = new HashSet<Integer>(); // type in instantiation to quash the warning
+      int index = 0;
+
+      while (numBytesToDamage > 0) {
+        // reset and scan through again if necessary
+        if (index == PACKET_SIZE) index = 0;
+        if (!listOfDamagedBytes.contains(index) && byteIsDamaged()) {
+          // damage packet
+          packet[index] -= 1;
+
+          numBytesToDamage--;
+          listOfDamagedBytes.add(index);
         }
       }
       return packet;

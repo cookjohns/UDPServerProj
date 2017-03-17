@@ -73,4 +73,10 @@ class Server {
 	private static boolean errorCheck(DatagramPacket packet) {
 		return true;
 	}
+
+	private static int sumBytesInPacket(byte[] packet) {
+		int total = 0;
+		for (byte b : packet) total += b;
+		return total;
+	}
 }

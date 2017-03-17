@@ -61,6 +61,7 @@ class Server {
 	    while (readHead < message.length) {
 	      byte[] packet = nextPacket(message, readHead);
 	      DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
+				int test = sendPacket.checksum;
 	      socket.send(sendPacket);
 	      readHead += PACKET_SIZE;
 	    }

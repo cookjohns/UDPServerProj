@@ -58,10 +58,9 @@ class Server {
 
 	private static void sendMessage(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
 	    int readHead = 0;
-	    while (readHead < message.length) {
+	    while (readHead < message.length+1) {
 	      byte[] packet = nextPacket(message, readHead);
 	      DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
-				int test = sendPacket.checksum;
 	      socket.send(sendPacket);
 	      readHead += PACKET_SIZE;
 	    }
@@ -73,11 +72,5 @@ class Server {
 
 	private static boolean errorCheck(DatagramPacket packet) {
 		return true;
-	}
-
-	private static int sumBytesInPacket(byte[] packet) {
-		int total = 0;
-		for (byte b : packet) total += b;
-		return total;
 	}
 }

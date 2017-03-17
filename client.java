@@ -64,9 +64,13 @@ class Client {
   }
 
   private static boolean errorCheck(byte[] packet) {
-    System.out.println(getChecksum(packet));
+    int checksum   = getChecksum(packet);
+    int messageSum = sumBytesInMessage(packet);
+
+    System.out.println(checksum);
     System.out.println(sumBytesInMessage(packet));
-    return getChecksum(packet) == sumBytesInMessage(packet);
+    
+    return checksum == messageSum;
   }
 
   private static byte[] gremlin(double damageProb, byte[] packet) {

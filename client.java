@@ -33,7 +33,7 @@ class Client {
     //byte[] message = Files.readAllBytes(Paths.get("message.txt"));
 
 	String request = "GET TestFile.html HTTP/1.0";
-	sendData = request.getBytes(); 
+	sendData = request.getBytes();
 
     DatagramPacket sendPacket = new DatagramPacket(
          sendData, sendData.length, ipAddr, portNumber);
@@ -45,16 +45,19 @@ class Client {
 		DatagramPacket receivePacket = new DatagramPacket(
               receiveData, receiveData.length);
     		clientSocket.receive(receivePacket);
-		if (receivePacket.getLength ()== 1) break;
+		if (receivePacket.getLength() == 1) break;
     
+    gremlin(receivePacket);
+    errorCheck(receivePacket);
+
 		String modifiedSentence = new String(receivePacket.getData());
    	System.out.println("FROM SERVER:\n" + modifiedSentence);
 	}
-    
+
 	clientSocket.close();
 
   }
-  
+
 	private int errorCheck() {
     return 0;
   }

@@ -45,7 +45,7 @@ class Client {
       receiveData = new byte[PACKET_SIZE];
       DatagramPacket receivePacket = new DatagramPacket(receiveData,
         receiveData.length);
-        clientSocket.receive(receivePacket);
+      clientSocket.receive(receivePacket);
       if (receivePacket.getLength() == 1) break;
 
       receiveData = gremlin(damageProb, receiveData);
@@ -109,4 +109,10 @@ class Client {
     Random rand = new Random();
     return rand.nextInt(PACKET_SIZE);
   }
+
+  private static int sumBytesInPacket(byte[] packet) {
+		int total = 0;
+		for (byte b : packet) total += b;
+		return total;
+	}
 }

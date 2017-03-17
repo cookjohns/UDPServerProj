@@ -68,10 +68,15 @@ class Server {
 		nullPacket[0] = 0;
 		DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
 	    socket.send(sendPacket);
-
 	}
 
 	private static boolean errorCheck(DatagramPacket packet) {
 		return true;
+	}
+
+	private static int sumBytesInPacket(byte[] packet) {
+		int total = 0;
+		for (byte b : packet) total += b;
+		return total;
 	}
 }

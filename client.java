@@ -1,6 +1,8 @@
 import java.net.*;
 import java.io.*;
 import java.nio.file.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Random;
 import java.util.HashSet;
 
@@ -67,9 +69,9 @@ class Client {
     int checksum   = getChecksum(packet);
     int messageSum = sumBytesInMessage(packet);
 
-    System.out.println(checksum);
-    System.out.println(sumBytesInMessage(packet));
-    
+    // System.out.println("checksum: " + checksum);
+    // System.out.println("message sum: " + messageSum);
+
     return checksum == messageSum;
   }
 
@@ -122,9 +124,10 @@ class Client {
   }
 
   private static int getChecksum(byte[] packet) {
-    int total = 0;
-    for (int i = 0; i < 4; i++) total += packet[i];
-    return total;
+    byte[] ba = new byte[4];
+    for (int i = 0; i < 4; i++) ba[i] = packet[i];
+    int checksum = ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN).getInt();
+    return checksum;
   }
 
   private static int sumBytesInMessage(byte[] packet) {

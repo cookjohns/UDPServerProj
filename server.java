@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.file.*;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 // port #s 10008-10011
 
@@ -49,17 +50,16 @@ class Server {
 	}
 
 	private static byte[] nextPacket(byte[] message, int readHead) {
-		int checksum = sumBytesInPacket(message);
-		byte[] checksumByteArray = ByteBuffer.allocate(4).putInt(checksum).array();
-
 		byte[] packet = new byte[PACKET_SIZE];
-		packet[0] = checksumByteArray[0];
-		packet[1] = checksumByteArray[1];
 
-		for (int i = 3; i < packet.length; i++) {
+		for (int i = 4; i < packet.length; i++) {
 			if (readHead + i == message.length) break;
 			packet[i] = message[readHead + i];
 		}
+		// add checksum to packetint checksum = sumBytesInPacket(message);
+		int checksum = sumBytesInPacket(packet);
+		byte[] checksumByteArray = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(checksum).array();
+		for (int j = 0; j < 4; j++) packet[j] = checksumByteArray[j];
 		return packet;
 	}
 

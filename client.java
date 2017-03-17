@@ -46,9 +46,9 @@ class Client {
               receiveData, receiveData.length);
     		clientSocket.receive(receivePacket);
 		if (receivePacket.getLength() == 1) break;
-    
-    gremlin(receivePacket);
-    errorCheck(receivePacket);
+
+    // gremlin(receivePacket);
+    // errorCheck(receivePacket);
 
 		String modifiedSentence = new String(receivePacket.getData());
    	System.out.println("FROM SERVER:\n" + modifiedSentence);
@@ -98,13 +98,6 @@ class Client {
 
   private int determineNumBytesDamaged() {
     Random rand = new Random();
-    int val = rand.nextInt(11);
-
-    // .5 prob 1 packet damaged
-    if (val <= 5) return 1;
-    // .3 prob 1 packet damaged
-    else if (val <= 8) return 2;
-    // .2 prob 1 packet damaged
-    return 3;
+    return rand.nextInt(PACKET_SIZE);
   }
 }

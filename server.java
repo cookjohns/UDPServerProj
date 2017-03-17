@@ -27,7 +27,7 @@ class Server {
 
 			InetAddress ipAddress = receivePacket.getAddress();
 			int clientPort = receivePacket.getPort();
-				
+
 			byte[] message = concat(httpHeader(), Files.readAllBytes(Paths.get("TestFile.html")));
 			sendMessage(message, ipAddress, clientPort, serverSocket);
 		}
@@ -71,8 +71,7 @@ class Server {
 
 	}
 
-	private int errorCheck() {
-		return 0;
+	private static boolean errorCheck(DatagramPacket packet) {
+		return true;
 	}
 }
-

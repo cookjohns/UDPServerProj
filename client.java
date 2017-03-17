@@ -48,7 +48,7 @@ class Client {
 		if (receivePacket.getLength() == 1) break;
 
     receiveData = gremlin(damageProb, receiveData);
-    // errorCheck(receivePacket);
+    boolean packetIsValid = errorCheck(receivePacket);
 
 		String modifiedSentence = new String(receivePacket.getData());
    	System.out.println("FROM SERVER:\n" + modifiedSentence);
@@ -58,8 +58,8 @@ class Client {
 
   }
 
-	private int errorCheck() {
-    return 0;
+	private static boolean errorCheck(DatagramPacket packet) {
+    return true;
   }
 
   private static byte[] gremlin(double damageProb, byte[] packet) {

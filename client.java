@@ -64,15 +64,15 @@ class Client {
   }
 
   private static byte[] gremlin(double damageProb, byte[] packet) {
-    if (packetIsDamaged(damageProb)) {
-      int numBytesToDamage = determineNumBytesDamaged();
+    if (packetShouldBeDamaged(damageProb)) {
+      int numBytesToDamage = determineNumBytesToBeDamaged();
       HashSet<Integer> listOfDamagedBytes = new HashSet<Integer>(); // type in instantiation to quash the warning
       int index = 0;
 
       while (numBytesToDamage > 0) {
         // reset and scan through again if necessary
         if (index == PACKET_SIZE) index = 0;
-        if (!listOfDamagedBytes.contains(index) && byteIsDamaged()) {
+        if (!listOfDamagedBytes.contains(index) && byteShouldBeDamaged()) {
           // damage packet
           packet[index] -= 1;
 
@@ -86,7 +86,7 @@ class Client {
     return packet;
   }
 
-  private static boolean packetIsDamaged(double damageProb) {
+  private static boolean packetShouldBeDamaged(double damageProb) {
     // get probability as percentage in range 0-100
     double prob = damageProb * 100;
     // get random int in range 0-100
@@ -97,7 +97,7 @@ class Client {
     return false;
   }
 
-  private static boolean byteIsDamaged() {
+  private static boolean byteShouldBeDamaged() {
     Random rand = new Random();
     int val = rand.nextInt(2);
 
@@ -106,7 +106,7 @@ class Client {
     return false;
   }
 
-  private static int determineNumBytesDamaged() {
+  private static int determineNumBytesToBeDamaged() {
     Random rand = new Random();
     return rand.nextInt(PACKET_SIZE);
   }

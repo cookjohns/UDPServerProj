@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.nio.file.*;
+import java.nio.ByteBuffer;
 
 // port #s 10008-10011
 
@@ -48,8 +49,14 @@ class Server {
 	}
 
 	private static byte[] nextPacket(byte[] message, int readHead) {
+		int checksum = sumBytesInPacket(message);
+		byte[] checksumByteArray = ByteBuffer.allocate(4).putInt(checksum).array();
+
 		byte[] packet = new byte[PACKET_SIZE];
-		for (int i = 0; i < packet.length; i++) {
+		packet[0] = checksumByteArray[0];
+		packet[1] = checksumByteArray[1];
+
+		for (int i = 3; i < packet.length; i++) {
 			if (readHead + i == message.length) break;
 			packet[i] = message[readHead + i];
 		}
@@ -62,7 +69,7 @@ class Server {
 	      byte[] packet = nextPacket(message, readHead);
 	      DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
 	      socket.send(sendPacket);
-	      readHead += PACKET_SIZE;
+	      readHead += PACKET_SIZE - 4;
 	    }
 		byte[] nullPacket  = new byte[1];
 		nullPacket[0] = 0;

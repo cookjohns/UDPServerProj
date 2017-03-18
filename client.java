@@ -11,13 +11,12 @@ import java.util.HashSet;
 class Client {
 
   public static final int PACKET_SIZE = 128;
-	
+
 	// for writing to file
 	private static boolean readHeader = true;
 	private static DataOutputStream saveFile;
-	
-  public static void main(String[] args) throws Exception {
 
+  public static void main(String[] args) throws Exception {
     // get damage probability
     double damageProb = 0.0;
     do {
@@ -29,8 +28,8 @@ class Client {
     InetAddress ipAddr = InetAddress.getByName("localhost");
     int portNumber = 10008;
 
-	FileOutputStream filestream = new FileOutputStream("sampleOut.html");
-	saveFile = new DataOutputStream(filestream);	
+	  FileOutputStream filestream = new FileOutputStream("sampleOut.html");
+	  saveFile = new DataOutputStream(filestream);
 
     DatagramSocket clientSocket = new DatagramSocket();
 
@@ -42,8 +41,8 @@ class Client {
 
     //byte[] message = Files.readAllBytes(Paths.get("message.txt"));
 
-	String request = "GET TestFile.html HTTP/1.0";
-	sendData = request.getBytes();
+	  String request = "GET TestFile.html HTTP/1.0";
+	  sendData = request.getBytes();
 
     DatagramPacket sendPacket = new DatagramPacket(
          sendData, sendData.length, ipAddr, portNumber);
@@ -64,14 +63,14 @@ class Client {
       // if (!packetIsValid) System.out.print("Packet number " + curPacketSeqNum
         // + " contains an error.\n");
 
-  		writePacketToFile(receiveData);    
-	
+  		writePacketToFile(receiveData);
+
 			String modifiedSentence = new String(receivePacket.getData());
       System.out.println("FROM SERVER:\n" + modifiedSentence);
       curPacketSeqNum++;
     }
-	saveFile.close();
-	filestream.close();
+	  saveFile.close();
+    filestream.close();
     clientSocket.close();
   }
 
@@ -90,10 +89,6 @@ class Client {
   private static boolean errorCheck(byte[] packet) {
     int checksum   = getChecksum(packet);
     int messageSum = sumBytesInMessage(packet);
-
-    // System.out.println("checksum: " + checksum);
-    // System.out.println("message sum: " + messageSum);
-
     return checksum == messageSum;
   }
 
@@ -104,20 +99,18 @@ class Client {
       int index = 0;
 
       while (numBytesToDamage > 0) {
- 	// reset and scan through again if necessary
+ 	      // reset and scan through again if necessary
         if (index == PACKET_SIZE) index = 0;
         if (!listOfDamagedBytes.contains(index) && byteShouldBeDamaged()) {
-          // damage packet
-          packet[index] -= 1;
-
+          packet[index] -= 1; // damage packet
           numBytesToDamage--;
           listOfDamagedBytes.add(index);
         }
-		index ++;
+		    index ++;
       }
       return packet;
     }
-    // else packet is not damaged
+    // else packet should not be damaged
     return packet;
   }
 
@@ -135,7 +128,6 @@ class Client {
   private static boolean byteShouldBeDamaged() {
     Random rand = new Random();
     int val = rand.nextInt(2);
-
     // .5 prob byte is damaged
     if (val == 0) return true;
     return false;

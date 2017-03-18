@@ -10,13 +10,12 @@ class Server {
 
 	public static final int PACKET_SIZE = 128;
 
-	public static void main(String[] args) throws Exception
-	{
+	public static void main(String[] args) throws Exception {
 		int portNumber = 10008;
 		DatagramSocket serverSocket = new DatagramSocket(portNumber);
 
 		byte[] receiveData = new byte[1024];
-		byte[] sendData = new byte[1024];
+		byte[] sendData    = new byte[1024];
 
 		while (true) {
 			DatagramPacket receivePacket = new DatagramPacket(
@@ -56,7 +55,7 @@ class Server {
 			if (readHead + i == message.length) break;
 			packet[i] = message[readHead + i];
 		}
-		// add checksum to packetint checksum = sumBytesInPacket(message);
+		// add checksum to packet
 		int checksum = sumBytesInPacket(packet);
 		byte[] checksumByteArray = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(checksum).array();
 		for (int j = 0; j < 4; j++) packet[j] = checksumByteArray[j];
@@ -64,17 +63,17 @@ class Server {
 	}
 
 	private static void sendMessage(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
-	    int readHead = -4;
-	    while (readHead < message.length+1) {
-	      byte[] packet = nextPacket(message, readHead);
-	      DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
-	      socket.send(sendPacket);
-	      readHead += PACKET_SIZE - 4;
-	    }
+		int readHead = -4;
+	  while (readHead < message.length+1) {
+	    byte[] packet = nextPacket(message, readHead);
+     	DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
+	    socket.send(sendPacket);
+	    readHead += PACKET_SIZE - 4;
+	  }
 		byte[] nullPacket  = new byte[1];
 		nullPacket[0] = 0;
 		DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
-	    socket.send(sendPacket);
+	  socket.send(sendPacket);
 	}
 
 	private static int sumBytesInPacket(byte[] packet) {

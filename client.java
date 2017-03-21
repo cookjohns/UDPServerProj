@@ -59,14 +59,11 @@ class Client {
       if (receivePacket.getLength() == 1) break;
 
       receiveData = gremlin(damageProb, receiveData);
-      boolean packetIsValid = errorCheck(receiveData);
-      // if (!packetIsValid) System.out.print("Packet number " + curPacketSeqNum
-        // + " contains an error.\n");
-
+      errorCheck(receiveData, curPacketSeqNum);
   		writePacketToFile(receiveData);
 
 			String modifiedSentence = new String(receivePacket.getData());
-      System.out.println("FROM SERVER:\n" + modifiedSentence);
+      System.out.println("\nFROM SERVER:\n" + modifiedSentence);
       curPacketSeqNum++;
     }
 	  saveFile.close();
@@ -86,10 +83,15 @@ class Client {
 		}
 	}
 
-  private static boolean errorCheck(byte[] packet) {
+  private static void errorCheck(byte[] packet, int curPacketSeqNum) {
+    // calculate checksum
     int checksum   = getChecksum(packet);
     int messageSum = sumBytesInMessage(packet);
-    return checksum == messageSum;
+    // print message if packet is damaged
+    if (checksum != messageSum) {
+      System.out.print("\nPacket number " + curPacketSeqNum
+        + " contains an error.\n");
+    }
   }
 
   private static byte[] gremlin(double damageProb, byte[] packet) {

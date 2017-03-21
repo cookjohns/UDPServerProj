@@ -25,7 +25,9 @@ class Client {
       damageProb = Double.parseDouble(input.readLine());
     } while (damageProb < 0 || damageProb > 1);
 
-    InetAddress ipAddr = InetAddress.getByName("localhost");
+	//auburn eng tux056
+	InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
+    //InetAddress ipAddr = InetAddress.getByName("localhost");
     int portNumber = 10008;
 
 	  FileOutputStream filestream = new FileOutputStream("sampleOut.html");
@@ -63,7 +65,7 @@ class Client {
   		writePacketToFile(receiveData);
 
 			String modifiedSentence = new String(receivePacket.getData());
-      //System.out.println("\nFROM SERVER:\n" + modifiedSentence);
+      System.out.println("\nFROM SERVER:\n" + modifiedSentence);
       curPacketSeqNum++;
     }
 	  saveFile.close();

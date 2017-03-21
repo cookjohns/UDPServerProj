@@ -63,7 +63,7 @@ class Client {
   		writePacketToFile(receiveData);
 
 			String modifiedSentence = new String(receivePacket.getData());
-      System.out.println("\nFROM SERVER:\n" + modifiedSentence);
+      //System.out.println("\nFROM SERVER:\n" + modifiedSentence);
       curPacketSeqNum++;
     }
 	  saveFile.close();
@@ -72,14 +72,8 @@ class Client {
   }
 
 	private static void writePacketToFile(byte[] data) throws Exception {
-		int numLines = 0;
 		for (int i = 4; i < data.length; i++) {
-			if (readHeader) {
-				if (data[i] == '\n') numLines ++;
-				if (numLines == 4) readHeader = false;
-			} else {
-				saveFile.writeByte(data[i]);
-			}
+			saveFile.writeByte(data[i]);
 		}
 	}
 

@@ -28,16 +28,17 @@ class Server {
 
 			InetAddress ipAddress = receivePacket.getAddress();
 			int clientPort = receivePacket.getPort();
-
-			byte[] message = concat(httpHeader(), Files.readAllBytes(Paths.get("TestFile.html")));
+			
+			byte[] data = Files.readAllBytes(Paths.get("TestFile.html"));
+			byte[] message = concat(httpHeader(data.length), data);
 			sendMessage(message, ipAddress, clientPort, serverSocket);
 		}
 	}
 
-	private static byte[] httpHeader() {
+	private static byte[] httpHeader(int size) {
 		String out = "HTTP/1.0 Document Follows \r\n";
 		out += "Content-Type: text/plain\r\n";
-		out += "Content-Length: xxx\r\n\r\n";
+		out += "Content-Length: " + size + "\r\n\r\n";
 		return out.getBytes();
 	}
 

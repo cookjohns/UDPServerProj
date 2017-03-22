@@ -25,7 +25,9 @@ class Client {
       damageProb = Double.parseDouble(input.readLine());
     } while (damageProb < 0 || damageProb > 1);
 
-    InetAddress ipAddr = InetAddress.getByName("localhost");
+	//auburn eng tux056
+	InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
+    //InetAddress ipAddr = InetAddress.getByName("localhost");
     int portNumber = 10008;
 
 	  FileOutputStream filestream = new FileOutputStream("sampleOut.html");
@@ -72,14 +74,8 @@ class Client {
   }
 
 	private static void writePacketToFile(byte[] data) throws Exception {
-		int numLines = 0;
 		for (int i = 4; i < data.length; i++) {
-			if (readHeader) {
-				if (data[i] == '\n') numLines ++;
-				if (numLines == 4) readHeader = false;
-			} else {
-				saveFile.writeByte(data[i]);
-			}
+			saveFile.writeByte(data[i]);
 		}
 	}
 

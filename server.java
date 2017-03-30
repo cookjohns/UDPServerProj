@@ -6,9 +6,11 @@ import java.nio.ByteOrder;
 
 // port #s 10008-10011
 
+// window size 32
+
 class Server {
 
-	public static final int PACKET_SIZE = 128;
+	public static final int PACKET_SIZE = 512;
 
 	public static void main(String[] args) throws Exception {
 		int portNumber = 10008;
@@ -28,7 +30,7 @@ class Server {
 
 			InetAddress ipAddress = receivePacket.getAddress();
 			int clientPort = receivePacket.getPort();
-			
+
 			byte[] data = Files.readAllBytes(Paths.get("TestFile.html"));
 			byte[] message = concat(httpHeader(data.length), data);
 			sendMessage(message, ipAddress, clientPort, serverSocket);

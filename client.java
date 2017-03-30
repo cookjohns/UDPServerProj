@@ -8,9 +8,11 @@ import java.util.HashSet;
 
 // port #s 10008-10011
 
+// window size 32
+
 class Client {
 
-  public static final int PACKET_SIZE = 128;
+  public static final int PACKET_SIZE = 512;
 
 	// for writing to file
 	private static boolean readHeader = true;

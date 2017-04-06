@@ -3,6 +3,7 @@ import java.net.*;
 import java.nio.file.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
 
 // port #s 10008-10011
 
@@ -66,17 +67,22 @@ class Server {
 	}
 
 	private static void sendMessage(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
+		HashMap<Integer, DatagramPacket> packetStore = new HashMap<Integer, DatagramPacket>(); // verbose to avoid warning
 		int readHead = -4;
-	  while (readHead < message.length+1) {
-	    byte[] packet = nextPacket(message, readHead);
-     	DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
-	    socket.send(sendPacket);
-	    readHead += PACKET_SIZE - 4;
-	  }
-		byte[] nullPacket  = new byte[1];
-		nullPacket[0] = 0;
-		DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
-	  socket.send(sendPacket);
+		int packet_id = 0;
+
+	 	while (readHead < message.length+1) {
+	    	byte[] packet = nextPacket(message, readHead);
+     		DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
+	    	socket.send(sendPacket);
+	    	readHead += PACKET_SIZE - 4;
+	  	}
+	 	byte[] nullPacket  = new byte[1];
+	 	nullPacket[0] = 0;
+	 	DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
+		packetStore.put(packet_id, sendPacket);
+	 	socket.send(sendPacket);
+		packet_id++;
 	}
 
 	private static int sumBytesInPacket(byte[] packet) {

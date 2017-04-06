@@ -12,6 +12,8 @@ import java.util.HashMap;
 class Server {
 
 	public static final int PACKET_SIZE = 512;
+	public static final int WINDOW_SIZE = 32; // 1/2 MAX_SEQ_NUM
+	public static final int MAX_SEQ_NUM = 64;
 
 	public static void main(String[] args) throws Exception {
 		int portNumber = 10008;
@@ -68,8 +70,8 @@ class Server {
 
 	private static void sendMessage(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
 		HashMap<Integer, DatagramPacket> packetStore = new HashMap<Integer, DatagramPacket>(); // verbose to avoid warning
-		int readHead = -4;
-		int packet_id = 0;
+		int readHead     = -4;
+		int packetSeqNum = 0;
 
 	 	while (readHead < message.length+1) {
 	    	byte[] packet = nextPacket(message, readHead);
@@ -80,9 +82,12 @@ class Server {
 	 	byte[] nullPacket  = new byte[1];
 	 	nullPacket[0] = 0;
 	 	DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
-		packetStore.put(packet_id, sendPacket);
+		packetStore.put(packet_id, sendPacket); // should overwrite reused seq numbers
 	 	socket.send(sendPacket);
-		packet_id++;
+
+		// increment packet sequence number
+		if (packetSeqNum < MAX_SEQ_NUM) packetSeqNum++;
+		else packetSeqNum = 0;
 	}
 
 	private static int sumBytesInPacket(byte[] packet) {

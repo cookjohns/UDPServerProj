@@ -27,8 +27,8 @@ class Client {
       damageProb = Double.parseDouble(input.readLine());
     } while (damageProb < 0 || damageProb > 1);
 
-	//auburn eng tux056
-	InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
+	  //auburn eng tux056
+	  InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
     //InetAddress ipAddr = InetAddress.getByName("localhost");
     int portNumber = 10008;
 
@@ -56,23 +56,37 @@ class Client {
     int curPacketSeqNum = 0;
 
     while(true) {
+      System.out.print("Started client loop");
       receiveData = new byte[PACKET_SIZE];
-      DatagramPacket receivePacket = new DatagramPacket(receiveData,
-        receiveData.length);
+      DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
       clientSocket.receive(receivePacket);
       if (receivePacket.getLength() == 1) break;
 
       receiveData = gremlin(damageProb, receiveData);
-      errorCheck(receiveData, curPacketSeqNum);
-  		writePacketToFile(receiveData);
 
-			String modifiedSentence = new String(receivePacket.getData());
-      System.out.println("\nFROM SERVER:\n" + modifiedSentence);
-      curPacketSeqNum++;
+      if (validChecksum(receiveData, curPacketSeqNum) && isExpectedSeqNum(receiveData, curPacketSeqNum++)) {
+        sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
+        writePacketToFile(receiveData);
+
+        String modifiedSentence = new String(receivePacket.getData());
+        System.out.println("\nFROM SERVER:\n" + modifiedSentence);
+      }
+      else sendNak();
     }
-	  saveFile.close();
+    saveFile.close();
     filestream.close();
     clientSocket.close();
+  }
+
+  /* Sends an ACK packet with byte[] length 4 */
+  private static void sendAck(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
+    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
+    clientSocket.send(ack);
+  }
+
+  private static void sendNak() {
+
   }
 
 	private static void writePacketToFile(byte[] data) throws Exception {
@@ -81,7 +95,7 @@ class Client {
 		}
 	}
 
-  private static void errorCheck(byte[] packet, int curPacketSeqNum) {
+  private static boolean validChecksum(byte[] packet, int curPacketSeqNum) {
     // calculate checksum
     int checksum   = getChecksum(packet);
     int messageSum = sumBytesInMessage(packet);
@@ -89,7 +103,16 @@ class Client {
     if (checksum != messageSum) {
       System.out.print("\nPacket number " + curPacketSeqNum
         + " contains an error.\n");
+        return false;
     }
+    System.out.print("Checksum pass");
+    return true;
+  }
+
+  public static boolean isExpectedSeqNum(byte[] packet, int curPacketSeqNum) {
+    int actualPacketSeqNum = getActualSeqNum(packet);
+    System.out.print("SeqNum pass");
+    return actualPacketSeqNum == curPacketSeqNum;
   }
 
   private static byte[] gremlin(double damageProb, byte[] packet) {
@@ -143,6 +166,13 @@ class Client {
     for (int i = 0; i < 4; i++) ba[i] = packet[i];
     int checksum = ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN).getInt();
     return checksum;
+  }
+
+  private static int getActualSeqNum(byte[] packet) {
+    byte[] ba = new byte[4];
+    for (int i = 4; i < 8; i++) ba[i] = packet[i];
+    int seqNum = ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN).getInt();
+    return seqNum;
   }
 
   private static int sumBytesInMessage(byte[] packet) {

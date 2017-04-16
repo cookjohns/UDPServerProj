@@ -82,7 +82,7 @@ class Server {
 	 	byte[] nullPacket  = new byte[1];
 	 	nullPacket[0] = 0;
 	 	DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
-		packetStore.put(packet_id, sendPacket); // should overwrite reused seq numbers
+		packetStore.put(packetSeqNum, sendPacket); // should overwrite reused seq numbers
 	 	socket.send(sendPacket);
 
 		// increment packet sequence number

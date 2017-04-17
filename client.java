@@ -64,7 +64,7 @@ class Client {
 
       receiveData = gremlin(damageProb, receiveData);
 
-      if (validChecksum(receiveData, curPacketSeqNum) && isExpectedSeqNum(receiveData, curPacketSeqNum++)) {
+      if (isExpectedSeqNum(receiveData, curPacketSeqNum++) && vaivalidChecksum(receiveData, curPacketSeqNum)) {
         sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
         writePacketToFile(receiveData);
 

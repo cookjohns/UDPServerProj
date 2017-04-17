@@ -5,77 +5,114 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Random;
 import java.util.HashSet;
+import java.lang.Thread;
 
 // port #s 10008-10011
 
 // window size 32
 
-class Client {
+class Client extends Thread {
 
   public static final int PACKET_SIZE = 512;
+  public static final int TIME_OUT = 1000;
 
 	// for writing to file
 	private static boolean readHeader = true;
 	private static DataOutputStream saveFile;
 
   public static void main(String[] args) throws Exception {
-    // get damage probability
-    double damageProb = 0.0;
-    do {
-      System.out.print("Enter damage probability (in range 0-1): ");
+ 		//Throw Exception if IP address not supplied.
+ 		if (args.length < 1)
+ 			throw new Exception("IP address must be supplied by the command line.");
+
+ 		//auburn eng tux056
+ 		ipAddr = InetAddress.getByName(args[0]);
+    // InetAddress ipAddr = InetAddress.getByName("localhost");
+
+ 		(new Client()).start();
+  }
+
+  public void run() {
+    try {
       BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-      damageProb = Double.parseDouble(input.readLine());
-    } while (damageProb < 0 || damageProb > 1);
+      // get damage probability
+ 	    double damageProb = 0.0;
+ 	    do {
+ 	      System.out.print("Enter damage probability (in range 0-1): ");
+ 	      damageProb = Double.parseDouble(input.readLine());
+ 	    } while (damageProb < 0 || damageProb > 1);
+      // get lost packet probability
+ 	    double lostProb = 0.0;
+ 		  do {
+ 			    System.out.print("Enter lost packet probability (in range 0-1): ");
+ 			    lostProb = Double.parseDouble(input.readLine());
+ 		   } while (lostProb < 0 || lostProb > 1);
+       // get delayed packed probability
+ 		   double delayProb = 0.0;
+ 		   do	{
+ 			     System.out.print("Enter delayed packet probability (in range 0-1): ");
+ 			     delayProb = Double.parseDouble(input.readLine());
+ 		   } while (delayProb < 0 || delayProb > 1);
+       input.close();
 
-	  //auburn eng tux056
-	  //InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
-    InetAddress ipAddr = InetAddress.getByName("localhost");
-    int portNumber = 10008;
+       //auburn eng tux056
+	     //InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
+       InetAddress ipAddr = InetAddress.getByName("localhost");
+       int portNumber = 10008;
 
-	  FileOutputStream filestream = new FileOutputStream("sampleOut.html");
-	  saveFile = new DataOutputStream(filestream);
+	     FileOutputStream filestream = new FileOutputStream("sampleOut.html");
+	     saveFile = new DataOutputStream(filestream);
 
-    DatagramSocket clientSocket = new DatagramSocket();
+       DatagramSocket clientSocket = new DatagramSocket();
 
-    byte[] sendData    = new byte[PACKET_SIZE];
-    byte[] receiveData = new byte[PACKET_SIZE];
+       byte[] sendData    = new byte[PACKET_SIZE];
+       byte[] receiveData = new byte[PACKET_SIZE];
 
-    //String sentence = input.readLine();
-    //sendData = sentence.getBytes();
+       //String sentence = input.readLine();
+       //sendData = sentence.getBytes();
 
-    //byte[] message = Files.readAllBytes(Paths.get("message.txt"));
+       //byte[] message = Files.readAllBytes(Paths.get("message.txt"));
 
-	  String request = "GET TestFile.html HTTP/1.0";
-	  sendData = request.getBytes();
+	     String request = "GET TestFile.html HTTP/1.0";
+	     sendData = request.getBytes();
 
-    DatagramPacket sendPacket = new DatagramPacket(
+       DatagramPacket sendPacket = new DatagramPacket(
          sendData, sendData.length, ipAddr, portNumber);
 
-    clientSocket.send(sendPacket);
+       clientSocket.send(sendPacket);
 
-    int curPacketSeqNum = 0;
+       int curPacketSeqNum = 0;
 
-    while(true) {
-      System.out.print("Started client loop");
-      receiveData = new byte[PACKET_SIZE];
-      DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
-      clientSocket.receive(receivePacket);
-      if (receivePacket.getLength() == 1) break;
+       final Thread current = Thread.currentThread();
 
-      receiveData = gremlin(damageProb, receiveData);
+       while(true) {
+         Thread timer = new Thread();
+         timer.start();
 
-      if (validChecksum(receiveData, curPacketSeqNum) && isExpectedSeqNum(receiveData, curPacketSeqNum++)) {
-        sendAck(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
-        writePacketToFile(receiveData);
+         System.out.print("Started client loop");
+         receiveData = new byte[PACKET_SIZE];
+         DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
+         clientSocket.receive(receivePacket);
+         if (receivePacket.getLength() == 1) break;
 
-        String modifiedSentence = new String(receivePacket.getData());
-        System.out.println("\nFROM SERVER:\n" + modifiedSentence);
-      }
-      else sendNak(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
-    }
-    saveFile.close();
-    filestream.close();
-    clientSocket.close();
+         try	{
+ 	    	    receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket, current);
+ 			   } catch (InterruptedException e)	{
+ 				      System.out.print("\nPacket number " + curPacketSeqNum + " is delayed.\n");
+ 					    timer.sleep(TIME_OUT / 2);
+ 				 } finally	{
+ 				     if (receiveData != null) processPacket(receiveData, receivePacket, curPacketSeqNum, clientSocket,
+                ipAddr, portNumber);
+ 				     else System.out.print("\nPacket number " + curPacketSeqNum + " is lost.\n");
+ 				 }
+ 				 timer.stop();
+         saveFile.close();
+         filestream.close();
+         clientSocket.close();
+       }
+     } catch(Exception e)	{
+         System.out.println(e);
+     }
   }
 
   /* Sends an ACK packet with byte[] length 4 */
@@ -118,7 +155,13 @@ class Client {
     return actualPacketSeqNum == curPacketSeqNum;
   }
 
-  private static byte[] gremlin(double damageProb, byte[] packet) {
+  private static byte[] gremlin(double lostProb, double damageProb,
+			double delayProb, byte[] packet, DatagramPacket receivePacket,
+			Thread current) throws Exception {
+		if (packetLost(lostProb)) return null;
+
+		if (packetDelayed(delayProb)) delayPacket(packet, receivePacket, current);
+
     if (packetShouldBeDamaged(damageProb)) {
       int numBytesToDamage = determineNumBytesToBeDamaged();
       HashSet<Integer> listOfDamagedBytes = new HashSet<Integer>(); // type in instantiation to quash the warning
@@ -150,6 +193,48 @@ class Client {
     if (val <= prob) return true;
     return false;
   }
+
+  private static boolean packetLost(double lostProb)	{
+    // get probability as percentage in range 0-100
+ 	  double prob = lostProb * 100;
+  	// get random int in range 0-100
+    Random rand = new Random();
+		int val = rand.nextInt(101);
+
+		if (val <= prob) return true;
+		return false;
+	}
+
+  private static boolean packetDelayed(double delayProb)	{
+ 	// get probability as percentage in range 0-100
+  	double prob = delayProb * 100;
+ 	// get random int in range 0-100
+ 	Random rand = new Random();
+ 	int val = rand.nextInt(101);
+
+ 	if (val <= prob) return true;
+ 	return false;
+ }
+
+ private static void delayPacket(byte[] packet, DatagramPacket receivePacket, Thread current) throws Exception {
+ 		Thread.sleep(TIME_OUT);
+ 		Thread.sleep(TIME_OUT);
+ 		current.interrupt();
+ }
+
+ private static void processPacket(byte[] receiveData, DatagramPacket receivePacket, int curPacketSeqNum,
+    DatagramSocket clientSocket, InetAddress ipAddr, int portNumber) throws Exception {
+    if (validChecksum(receiveData, curPacketSeqNum) && isExpectedSeqNum(receiveData, curPacketSeqNum++)) {
+      sendAck(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
+      writePacketToFile(receiveData);
+
+      String modifiedSentence = new String(receivePacket.getData());
+      System.out.println("\nFROM SERVER:\n" + modifiedSentence);
+    }
+    else {
+      sendNak(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
+    }
+ }
 
   private static boolean byteShouldBeDamaged() {
     Random rand = new Random();

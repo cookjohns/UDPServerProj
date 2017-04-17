@@ -23,7 +23,6 @@ class Server {
 		byte[] sendData    = new byte[1024];
 
 		while (true) {
-			System.out.print("Started server loop");
 			DatagramPacket receivePacket = new DatagramPacket(
 					receiveData, receiveData.length);
 			serverSocket.receive(receivePacket);
@@ -55,10 +54,10 @@ class Server {
 		return out;
 	}
 
-	private static byte[] nextPacket(byte[] message, int readHead, int packetSeqNum) {
+	private static byte[] nextPacket(byte[] message, int readHead) {
 		byte[] packet = new byte[PACKET_SIZE];
 
-		for (int i = 8; i < packet.length; i++) {
+		for (int i = 4; i < packet.length; i++) {
 			if (readHead + i == message.length) break;
 			packet[i] = message[readHead + i];
 		}
@@ -66,33 +65,30 @@ class Server {
 		int checksum = sumBytesInPacket(packet);
 		byte[] checksumByteArray = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(checksum).array();
 		for (int j = 0; j < 4; j++) packet[j] = checksumByteArray[j];
-		// add seq num to packet
-		int seqNumMod64 = packetSeqNum % 64;
-	  byte[] packetSeqNumArray = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(seqNumMod64).array();
-		for (int k = 4; k < 8; k++) packet[k] = packetSeqNumArray[k - 4];
 		return packet;
 	}
 
 	private static void sendMessage(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
 		HashMap<Integer, DatagramPacket> packetStore = new HashMap<Integer, DatagramPacket>(); // verbose to avoid warning
-		int readHead     = -8;
+		int readHead     = -4;
 		int packetSeqNum = 0;
 
 	 	while (readHead < message.length+1) {
-	    	byte[] packet = nextPacket(message, readHead, packetSeqNum++);
+	    	byte[] packet = nextPacket(message, readHead);
      		DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
 	    	socket.send(sendPacket);
 	    	readHead += PACKET_SIZE - 4;
-	  }
+	  	}
 	 	byte[] nullPacket  = new byte[1];
 	 	nullPacket[0] = 0;
+		int packet_id = 0;
 	 	DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
-		packetStore.put(packetSeqNum, sendPacket); // should overwrite reused seq numbers
+		packetStore.put(packet_id, sendPacket); // should overwrite reused seq numbers
 	 	socket.send(sendPacket);
 
 		// increment packet sequence number
-		// if (packetSeqNum < MAX_SEQ_NUM) packetSeqNum++;
-		// else packetSeqNum = 0;
+		if (packetSeqNum < MAX_SEQ_NUM) packetSeqNum++;
+		else packetSeqNum = 0;
 	}
 
 	private static int sumBytesInPacket(byte[] packet) {

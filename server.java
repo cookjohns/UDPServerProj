@@ -22,15 +22,19 @@ class Server {
 		byte[] receiveData = new byte[1024];
 		byte[] sendData    = new byte[1024];
 
+		System.out.print("Started server loop\n");
 		while (true) {
-			System.out.print("Started server loop");
 			DatagramPacket receivePacket = new DatagramPacket(
 					receiveData, receiveData.length);
 			serverSocket.receive(receivePacket);
 
-			String sentence = new String(receivePacket.getData());
-
-			System.out.println("Message recieved: " + sentence);
+			if (receivePacket.getLength() == 4) {
+				System.out.println("Ack/Nack recieved: seq number " + ByteBuffer.wrap(receivePacket.getData()).getInt());
+			} else {
+				String sentence = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength());
+				System.out.println("Message recieved: " + sentence);
+			}
+			
 
 			InetAddress ipAddress = receivePacket.getAddress();
 			int clientPort = receivePacket.getPort();
@@ -68,7 +72,7 @@ class Server {
 		for (int j = 0; j < 4; j++) packet[j] = checksumByteArray[j];
 		// add seq num to packet
 		int seqNumMod64 = packetSeqNum % 64;
-	  byte[] packetSeqNumArray = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(seqNumMod64).array();
+	  	byte[] packetSeqNumArray = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(seqNumMod64).array();
 		for (int k = 4; k < 8; k++) packet[k] = packetSeqNumArray[k - 4];
 		return packet;
 	}
@@ -82,8 +86,8 @@ class Server {
 	    	byte[] packet = nextPacket(message, readHead, packetSeqNum++);
      		DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
 	    	socket.send(sendPacket);
-	    	readHead += PACKET_SIZE - 4;
-	  }
+	    	readHead += PACKET_SIZE - 8;
+	  	}
 	 	byte[] nullPacket  = new byte[1];
 	 	nullPacket[0] = 0;
 	 	DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);

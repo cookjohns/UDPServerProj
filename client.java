@@ -22,12 +22,12 @@ class Client extends Thread {
 
   public static void main(String[] args) throws Exception {
  		//Throw Exception if IP address not supplied.
- 	// 	if (args.length < 1)
- 	// 		throw new Exception("IP address must be supplied by the command line.");
+ 		if (args.length < 1)
+ 			throw new Exception("IP address must be supplied by the command line.");
 
  		//auburn eng tux056
- 	// 	ipAddr = InetAddress.getByName(args[0]);
-    InetAddress ipAddr = InetAddress.getByName("localhost");
+ 		ipAddr = InetAddress.getByName(args[0]);
+    // InetAddress ipAddr = InetAddress.getByName("localhost");
 
  		(new Client()).start();
   }

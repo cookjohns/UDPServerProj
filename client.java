@@ -65,13 +65,13 @@ class Client {
       receiveData = gremlin(damageProb, receiveData);
 
       if (validChecksum(receiveData, curPacketSeqNum) && isExpectedSeqNum(receiveData, curPacketSeqNum++)) {
-        sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
+        sendAck(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
         writePacketToFile(receiveData);
 
         String modifiedSentence = new String(receivePacket.getData());
         System.out.println("\nFROM SERVER:\n" + modifiedSentence);
       }
-      else sendNak();
+      else sendNak(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
     }
     saveFile.close();
     filestream.close();
@@ -85,8 +85,11 @@ class Client {
     clientSocket.send(ack);
   }
 
-  private static void sendNak() {
-
+  /* Sends a NAK packet with byte[] length 4 */
+  private static void sendNak(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
+    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
+    clientSocket.send(ack);
   }
 
 	private static void writePacketToFile(byte[] data) throws Exception {

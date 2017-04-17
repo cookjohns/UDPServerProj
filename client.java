@@ -239,14 +239,19 @@ class Client extends Thread {
  private static void processPacket(byte[] receiveData, DatagramPacket receivePacket,
     DatagramSocket clientSocket, InetAddress ipAddr, int portNumber) throws Exception {
     System.out.println("Recieving packet " + getActualSeqNum(receiveData) + ",expecting " + curPacketSeqNum +"\n");
-      if (validChecksum(receiveData) && isExpectedSeqNum(receiveData, curPacketSeqNum)) {
+      if (validChecksum(receiveData)) {
 
-        curPacketSeqNum ++;
-        sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
-        writePacketToFile(receiveData);
+        if (isExpectedSeqNum(receiveData, curPacketSeqNum)) {
+          curPacketSeqNum ++;
+          sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
+          writePacketToFile(receiveData);
 
-        String modifiedSentence = new String(getMessage(receivePacket.getData()));
-        System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");
+          String modifiedSentence = new String(getMessage(receivePacket.getData()));
+          System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");  
+        } else {
+          System.out.println("Out of order packet " + getActualSeqNum(receiveData) + " recieved, Expecting " + curPacketSeqNum);
+        }
+        
       }
       else sendNak(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
  }

@@ -5,91 +5,118 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Random;
 import java.util.HashSet;
+import java.lang.Thread;
 
 // port #s 10008-10011
 
 // window size 32
 
-class Client {
+class Client extends Thread {
 
   public static final int PACKET_SIZE = 512;
+	public static final int TIME_OUT = 1000;		// Thread.sleep
 
 	// for writing to file
 	private static boolean readHeader = true;
 	private static DataOutputStream saveFile;
 
+	private static int curPacketSeqNum = 0;
+	
+	private static InetAddress ipAddr = null;
+
+	public void run() {
+		try	{
+			DatagramSocket clientSocket = new DatagramSocket();
+
+		  byte[] sendData    = new byte[PACKET_SIZE];
+		  int portNumber = 10008;
+
+		  //String sentence = input.readLine();
+		  //sendData = sentence.getBytes();
+
+		  //byte[] message = Files.readAllBytes(Paths.get("message.txt"));
+
+			FileOutputStream filestream = new FileOutputStream("sampleOut.html");
+			saveFile = new DataOutputStream(filestream);
+
+			String request = "GET TestFile.html HTTP/1.0";
+			sendData = request.getBytes();
+
+		  DatagramPacket sendPacket = new DatagramPacket(
+		       sendData, sendData.length, ipAddr, portNumber);
+
+		  clientSocket.send(sendPacket);
+
+			BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+
+			// get lost packet probability
+			double lostProb = 0.0;
+			do	{
+				System.out.print("Enter lost packet probability (in range 0-1): ");
+				lostProb = Double.parseDouble(input.readLine());
+			} while (lostProb < 0 || lostProb > 1);
+		
+		  // get damage probability
+		  double damageProb = 0.0;
+		  do {
+		    System.out.print("Enter damage probability (in range 0-1): ");
+		    damageProb = Double.parseDouble(input.readLine());
+		  } while (damageProb < 0 || damageProb > 1);
+
+			// get delayed packet probability
+			double delayProb = 0.0;
+			do	{
+				System.out.print("Enter delayed packet probability (in range 0-1): ");
+				delayProb = Double.parseDouble(input.readLine());
+			} while (delayProb < 0 || delayProb > 1);
+
+			input.close();
+			final Thread current = Thread.currentThread();
+			while(true) {
+				Thread timer = new Thread();
+				timer.start();
+
+		    byte[] receiveData = new byte[PACKET_SIZE];
+		    DatagramPacket receivePacket = new DatagramPacket(receiveData,
+		      receiveData.length);
+		    clientSocket.receive(receivePacket);
+		    if (receivePacket.getLength() == 1) break;
+			
+				try	{
+		    	receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, 
+							receivePacket, current);
+				} catch (InterruptedException e)	{
+					System.out.print("\nPacket number " + curPacketSeqNum
+						+ " is delayed.\n");
+					timer.sleep(TIME_OUT / 2);
+				} finally	{
+					if (receiveData != null)
+						processPacket(receiveData, receivePacket);
+					else
+						System.out.print("\nPacket number " + curPacketSeqNum
+							+ " is lost.\n");
+				}
+				timer.stop();
+		  }
+
+			saveFile.close();
+		  filestream.close();
+		  clientSocket.close();
+		} catch(Exception e)	{
+			System.out.println(e);
+		}
+	}
+
   public static void main(String[] args) throws Exception {
-    // get damage probability
-    double damageProb = 0.0;
-    do {
-      System.out.print("Enter damage probability (in range 0-1): ");
-      BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-      damageProb = Double.parseDouble(input.readLine());
-    } while (damageProb < 0 || damageProb > 1);
+		//Throw Exception if IP address not supplied.		
+		if (args.length < 1)
+			throw new Exception("IP address must be supplied by the command line.");
+		
+		//auburn eng tux056
+		ipAddr = InetAddress.getByName(args[0]);
+    //InetAddress ipAddr = InetAddress.getByName("localhost");
 
-	  //auburn eng tux056
-	  //InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
-    InetAddress ipAddr = InetAddress.getByName("localhost");
-    int portNumber = 10008;
-
-	  FileOutputStream filestream = new FileOutputStream("sampleOut.html");
-	  saveFile = new DataOutputStream(filestream);
-
-    DatagramSocket clientSocket = new DatagramSocket();
-
-    byte[] sendData    = new byte[PACKET_SIZE];
-    byte[] receiveData = new byte[PACKET_SIZE];
-
-    //String sentence = input.readLine();
-    //sendData = sentence.getBytes();
-
-    //byte[] message = Files.readAllBytes(Paths.get("message.txt"));
-
-	  String request = "GET TestFile.html HTTP/1.0";
-	  sendData = request.getBytes();
-
-    DatagramPacket sendPacket = new DatagramPacket(
-         sendData, sendData.length, ipAddr, portNumber);
-
-    clientSocket.send(sendPacket);
-
-    int curPacketSeqNum = 0;
-
-    while(true) {
-      System.out.print("Started client loop");
-      receiveData = new byte[PACKET_SIZE];
-      DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
-      clientSocket.receive(receivePacket);
-      if (receivePacket.getLength() == 1) break;
-
-      receiveData = gremlin(damageProb, receiveData);
-
-      if (validChecksum(receiveData, curPacketSeqNum) && isExpectedSeqNum(receiveData, curPacketSeqNum++)) {
-        sendAck(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
-        writePacketToFile(receiveData);
-
-        String modifiedSentence = new String(receivePacket.getData());
-        System.out.println("\nFROM SERVER:\n" + modifiedSentence);
-      }
-      else sendNak(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
-    }
-    saveFile.close();
-    filestream.close();
-    clientSocket.close();
-  }
-
-  /* Sends an ACK packet with byte[] length 4 */
-  private static void sendAck(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
-    DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
-    clientSocket.send(ack);
-  }
-
-  /* Sends a NAK packet with byte[] length 4 */
-  private static void sendNak(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
-    DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
-    clientSocket.send(ack);
+		(new Client()).start();
   }
 
 	private static void writePacketToFile(byte[] data) throws Exception {
@@ -98,7 +125,7 @@ class Client {
 		}
 	}
 
-  private static boolean validChecksum(byte[] packet, int curPacketSeqNum) {
+  private static void errorCheck(byte[] packet, int curPacketSeqNum) {
     // calculate checksum
     int checksum   = getChecksum(packet);
     int messageSum = sumBytesInMessage(packet);
@@ -106,19 +133,18 @@ class Client {
     if (checksum != messageSum) {
       System.out.print("\nPacket number " + curPacketSeqNum
         + " contains an error.\n");
-        return false;
     }
-    System.out.print("Checksum pass");
-    return true;
   }
 
-  public static boolean isExpectedSeqNum(byte[] packet, int curPacketSeqNum) {
-    int actualPacketSeqNum = getActualSeqNum(packet);
-    System.out.print("SeqNum pass");
-    return actualPacketSeqNum == curPacketSeqNum;
-  }
+  private static byte[] gremlin(double lostProb, double damageProb, 
+			double delayProb, byte[] packet, DatagramPacket receivePacket,
+			Thread current) throws Exception {
+		if (packetLost(lostProb))
+			return null;
 
-  private static byte[] gremlin(double damageProb, byte[] packet) {
+		if (packetDelayed(delayProb))
+			delayPacket(packet, receivePacket, current);
+
     if (packetShouldBeDamaged(damageProb)) {
       int numBytesToDamage = determineNumBytesToBeDamaged();
       HashSet<Integer> listOfDamagedBytes = new HashSet<Integer>(); // type in instantiation to quash the warning
@@ -140,6 +166,17 @@ class Client {
     return packet;
   }
 
+	private static boolean packetLost(double lostProb)	{
+		// get probability as percentage in range 0-100
+		double prob = lostProb * 100;
+		// get random int in range 0-100
+		Random rand = new Random();
+		int val = rand.nextInt(101);
+	
+		if (val <= prob) return true;
+		return false;
+	}
+
   private static boolean packetShouldBeDamaged(double damageProb) {
     // get probability as percentage in range 0-100
     double prob = damageProb * 100;
@@ -150,6 +187,33 @@ class Client {
     if (val <= prob) return true;
     return false;
   }
+
+	private static boolean packetDelayed(double delayProb)	{
+		// get probability as percentage in range 0-100
+		double prob = delayProb * 100;
+		// get random int in range 0-100
+		Random rand = new Random();
+		int val = rand.nextInt(101);
+
+		if (val <= prob) return true;
+		return false;
+	}
+
+	private static void delayPacket(byte[] packet, DatagramPacket receivePacket,
+				Thread current) throws Exception {
+			Thread.sleep(TIME_OUT);
+			Thread.sleep(TIME_OUT);
+			current.interrupt();
+	}
+
+	private static void processPacket(byte[] packet, DatagramPacket receivePacket) throws Exception {
+		errorCheck(packet, curPacketSeqNum);
+		writePacketToFile(packet);
+
+		String modifiedSentence = new String(receivePacket.getData());
+		System.out.println("\nFROM SERVER: " + curPacketSeqNum + "\n" + modifiedSentence);
+		curPacketSeqNum++;
+	}
 
   private static boolean byteShouldBeDamaged() {
     Random rand = new Random();
@@ -169,13 +233,6 @@ class Client {
     for (int i = 0; i < 4; i++) ba[i] = packet[i];
     int checksum = ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN).getInt();
     return checksum;
-  }
-
-  private static int getActualSeqNum(byte[] packet) {
-    byte[] ba = new byte[4];
-    for (int i = 4; i < 8; i++) ba[i - 4] = packet[i];
-    int seqNum = ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN).getInt();
-    return seqNum;
   }
 
   private static int sumBytesInMessage(byte[] packet) {

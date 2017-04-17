@@ -28,8 +28,8 @@ class Client {
     } while (damageProb < 0 || damageProb > 1);
 
 	  //auburn eng tux056
-	  InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
-    //InetAddress ipAddr = InetAddress.getByName("localhost");
+	  //InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
+    InetAddress ipAddr = InetAddress.getByName("localhost");
     int portNumber = 10008;
 
 	  FileOutputStream filestream = new FileOutputStream("sampleOut.html");
@@ -170,7 +170,7 @@ class Client {
 
   private static int getActualSeqNum(byte[] packet) {
     byte[] ba = new byte[4];
-    for (int i = 4; i < 8; i++) ba[i] = packet[i];
+    for (int i = 4; i < 8; i++) ba[i - 4] = packet[i];
     int seqNum = ByteBuffer.wrap(ba).order(ByteOrder.LITTLE_ENDIAN).getInt();
     return seqNum;
   }

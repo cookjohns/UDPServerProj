@@ -67,8 +67,8 @@ class Server {
 		byte[] checksumByteArray = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(checksum).array();
 		for (int j = 0; j < 4; j++) packet[j] = checksumByteArray[j];
 		// add seq num to packet
-	  byte[] packetSeqNumArray = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(packetSeqNum).array();
-		for (int k = 4; k < 8; k++) packet[k] = checksumByteArray[k];
+	  	byte[] packetSeqNumArray = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(packetSeqNum).array();
+		for (int k = 4; k < 8; k++) packet[k] = packetSeqNumArray[k - 4];
 		return packet;
 	}
 

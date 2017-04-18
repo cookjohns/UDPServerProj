@@ -49,7 +49,7 @@ class Server {
 		}
 	}
 
-	private static void goBackN(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) {
+	private static void goBackN(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
 		int readHead = 0;
 		int windowStart = 0;
 		int nextSeqNum = 0;
@@ -62,9 +62,9 @@ class Server {
 			nextSeqNum += WINDOW_SIZE;
 			while(windowStart != nextSeqNum) {
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-				serverSocket.receive(receivePacket);
+				socket.receive(receivePacket);
 				if (receivePacket.getLength() == 4) { // is ACK
-					int ackNum = ByteBuffer.wrap(receivePacket.getData()).getInt()
+					int ackNum = ByteBuffer.wrap(receivePacket.getData()).getInt();
 					System.out.println("Ack recieved: seq number " + ackNum);
 					if (ackNum == windowStart + 1) {
 						windowStart ++; //advance window by one when next packet is ack
@@ -115,7 +115,7 @@ class Server {
 		return packet;
 	}
 
-	private static void sendWindow(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket, int offset, int windowStart) {
+	private static void sendWindow(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket, int offset, int windowStart) throws Exception {
 		int packetSeqNum = windowStart;
 		int readHead = offset - 8;
 

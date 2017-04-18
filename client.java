@@ -130,14 +130,18 @@ class Client extends Thread {
 
   /* Sends an ACK packet with byte[] length 4 */
   private static void sendAck(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    byte[] seqNum = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    byte[] ackByte = ByteBuffer.allocate(2).putChar('A').array();
+    byte[] array = concat(ackByte, seqNum);
     DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
     clientSocket.send(ack);
   }
 
   /* Sends a NAK packet with byte[] length 4 */
   private static void sendNak(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    byte[] seqNum = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    byte[] nakByte = ByteBuffer.allocate(2).putChar('N').array();
+    byte[] array = concat(nakByte, seqNum);
     DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
     clientSocket.send(ack);
   }
@@ -147,6 +151,13 @@ class Client extends Thread {
 			saveFile.writeByte(data[i]);
 		}
 	}
+
+  private static byte[] concat(byte[] a, byte[] b) {
+    byte[] out = new byte[a.length + b.length];
+    System.arraycopy(a, 0, out, 0, a.length);
+    System.arraycopy(b, 0, out, a.length, b.length);
+    return out;
+  }
 
   private static boolean validChecksum(byte[] packet) {
     // calculate checksum

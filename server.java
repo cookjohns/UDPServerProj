@@ -4,6 +4,7 @@ import java.nio.file.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
+import java.util.Arrays;
 
 // port #s 10008-10011
 
@@ -54,6 +55,16 @@ class Server {
 		return (seqNum + 1) % MAX_SEQ_NUM;
 	}
 
+	private static Boolean isAck(byte[] data) {
+		byte[] ackByte = Arrays.copyOfRange(data, 0, 2);
+		return (new String(ackByte).contains("A"));
+	}	
+
+	private static int ackNum(byte[] data) {
+		byte[] seqNum = Arrays.copyOfRange(data, 2, 6);
+		return ByteBuffer.wrap(seqNum).getInt();
+	}
+
 	private static void goBackN(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
 		int readHead = 0;
 		int windowStart = 0;
@@ -68,18 +79,21 @@ class Server {
 			while(windowStart != nextSeqNum) {
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				socket.receive(receivePacket);
-				if (receivePacket.getLength() == 4) { // is ACK
-					int ackNum = ByteBuffer.wrap(receivePacket.getData()).getInt();
+				byte[] data = receivePacket.getData();
+				int ackNum = ackNum(data);
+				if (isAck(data)) { // is ACK
 					System.out.println("Ack recieved: seq number " + ackNum);
 					if (ackNum == nextNum(windowStart)) {
 						windowStart = nextNum(windowStart); //advance window by one when next packet is ack
+						System.out.println("Moving window up to " + windowStart);
 						readHead += PACKET_SIZE - 8;
 						//set timeout to next packet
 						if (readHead >= message.length) {
 							break;
 						}
 					}
-				} else if (receivePacket.getLength() == 4) { //is NAK
+				} else { //is NAK
+					System.out.println("Nack recieved: seq number " + ackNum);
 					nextSeqNum = windowStart; //go back to last successful ACK
 					break;
 				} 
@@ -110,7 +124,7 @@ class Server {
 		byte[] packet = new byte[PACKET_SIZE];
 
 		for (int i = 8; i < packet.length; i++) {
-			if (readHead + i == message.length) break;
+			if (readHead + i >= message.length) break;
 			packet[i] = message[readHead + i];
 		}
 		// add checksum to packet
@@ -128,17 +142,15 @@ class Server {
 		int packetSeqNum = windowStart;
 		int readHead = offset - 8;
 
-		while (readHead < message.length + 1) {
+		int counter = 0;
+		System.out.println("Sending window " + windowStart + " to " + (windowStart + WINDOW_SIZE) % MAX_SEQ_NUM);
+		while (readHead < message.length + 1 && counter < WINDOW_SIZE) {
+			counter ++;
 			byte[] packet = nextPacket(message, readHead, packetSeqNum++);
 			DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
 			socket.send(sendPacket);
 			readHead += PACKET_SIZE - 8;
 		}
-		byte[] nullPacket = new byte[1];
-		nullPacket[0] = 0;
-		DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
-		socket.send(sendPacket);
-
 	}
 
 	private static void sendMessage(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {

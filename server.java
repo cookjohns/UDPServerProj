@@ -144,7 +144,7 @@ class Server {
 
 		int counter = 0;
 		System.out.println("Sending window " + windowStart + " to " + (windowStart + WINDOW_SIZE) % MAX_SEQ_NUM);
-		while (readHead < message.length + 1 && counter < WINDOW_SIZE) {
+		while (readHead < (message.length + 1 - 8) && counter < WINDOW_SIZE) {
 			counter ++;
 			byte[] packet = nextPacket(message, readHead, packetSeqNum++);
 			DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);

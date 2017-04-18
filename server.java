@@ -15,6 +15,7 @@ class Server {
 	public static final int WINDOW_SIZE = 32; // 1/2 MAX_SEQ_NUM
 	public static final int MAX_SEQ_NUM = 64;
 
+
 	public static void main(String[] args) throws Exception {
 		int portNumber = 10008;
 		DatagramSocket serverSocket = new DatagramSocket(portNumber);
@@ -35,6 +36,9 @@ class Server {
 				System.out.println("Message recieved: " + sentence);
 			}
 			
+			
+			int windowHead = 0;
+
 
 			InetAddress ipAddress = receivePacket.getAddress();
 			int clientPort = receivePacket.getPort();
@@ -43,6 +47,40 @@ class Server {
 			byte[] message = concat(httpHeader(data.length), data);
 			sendMessage(message, ipAddress, clientPort, serverSocket);
 		}
+	}
+
+	private static void goBackN(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) {
+		int readHead = 0;
+		int windowStart = 0;
+		int nextSeqNum = 0;
+
+		byte[] receiveData = new byte[1024];
+
+		outerloop:
+		while (readHead < message.length + 1) {
+			sendWindow(message, ipAddr, port, socket, readHead, windowStart);
+			nextSeqNum += WINDOW_SIZE;
+			while(windowStart != nextSeqNum) {
+				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+				serverSocket.receive(receivePacket);
+				if (receivePacket.getLength() == 4) { // is ACK
+					int ackNum = ByteBuffer.wrap(receivePacket.getData()).getInt()
+					System.out.println("Ack recieved: seq number " + ackNum);
+					if (ackNum == windowStart + 1) {
+						windowStart ++; //advance window by one when next packet is ack
+						readHead += PACKET_SIZE - 8;
+						//set timeout to next packet
+					}
+				} else if (receivePacket.getLength() == 4) { //is NAK
+					nextSeqNum = windowStart; //go back to last successful ACK
+					continue outerloop;
+				} 
+			}
+		}
+		byte[] nullPacket = new byte[1];
+		nullPacket[0] = 0;
+		DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
+		socket.send(sendPacket);
 	}
 
 	private static byte[] httpHeader(int size) {
@@ -77,6 +115,23 @@ class Server {
 		return packet;
 	}
 
+	private static void sendWindow(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket, int offset, int windowStart) {
+		int packetSeqNum = windowStart;
+		int readHead = offset - 8;
+
+		while (readHead < message.length + 1) {
+			byte[] packet = nextPacket(message, readHead, packetSeqNum++);
+			DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
+			socket.send(sendPacket);
+			readHead += PACKET_SIZE - 8;
+		}
+		byte[] nullPacket = new byte[1];
+		nullPacket[0] = 0;
+		DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
+		socket.send(sendPacket);
+
+	}
+
 	private static void sendMessage(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
 		HashMap<Integer, DatagramPacket> packetStore = new HashMap<Integer, DatagramPacket>(); // verbose to avoid warning
 		int readHead     = -8;
@@ -86,12 +141,12 @@ class Server {
 	    	byte[] packet = nextPacket(message, readHead, packetSeqNum++);
      		DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
 	    	socket.send(sendPacket);
+	    	packetStore.put(packetSeqNum, sendPacket); // should overwrite reused seq numbers
 	    	readHead += PACKET_SIZE - 8;
 	  	}
 	 	byte[] nullPacket  = new byte[1];
 	 	nullPacket[0] = 0;
 	 	DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);
-		packetStore.put(packetSeqNum, sendPacket); // should overwrite reused seq numbers
 	 	socket.send(sendPacket);
 
 		// increment packet sequence number

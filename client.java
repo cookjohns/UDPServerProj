@@ -129,7 +129,6 @@ class Client extends Thread {
 
   /* Sends an ACK packet with byte[] length 4 */
   private static void sendAck(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    System.out.println("Sending ack number " + curPacketSeqNum);
     byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
     DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
     clientSocket.send(ack);
@@ -137,7 +136,6 @@ class Client extends Thread {
 
   /* Sends a NAK packet with byte[] length 4 */
   private static void sendNak(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    System.out.println("Sending nack number " + curPacketSeqNum);
     byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
     DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
     clientSocket.send(ack);
@@ -238,7 +236,6 @@ class Client extends Thread {
 
  private static void processPacket(byte[] receiveData, DatagramPacket receivePacket,
     DatagramSocket clientSocket, InetAddress ipAddr, int portNumber) throws Exception {
-    System.out.println("Recieving packet " + getActualSeqNum(receiveData) + ",expecting " + curPacketSeqNum +"\n");
       if (validChecksum(receiveData)) {
 
         if (isExpectedSeqNum(receiveData, curPacketSeqNum)) {
@@ -247,13 +244,18 @@ class Client extends Thread {
           writePacketToFile(receiveData);
 
           String modifiedSentence = new String(getMessage(receivePacket.getData()));
-          System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");  
+          System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");
+          System.out.println("Recieved in order packet. Sending Ack number " + curPacketSeqNum);  
         } else {
+          sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
           System.out.println("Out of order packet " + getActualSeqNum(receiveData) + " recieved, Expecting " + curPacketSeqNum);
+          System.out.println("Resending ACK number " + curPacketSeqNum);
         }
-        
       }
-      else sendNak(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
+      else {
+        sendNak(clientSocket, curPacketSeqNum, ipAddr, portNumber);
+        System.out.println("Error in packet, sending NAK number " + curPacketSeqNum);
+      }
  }
 
   private static boolean byteShouldBeDamaged() {

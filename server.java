@@ -45,8 +45,13 @@ class Server {
 
 			byte[] data = Files.readAllBytes(Paths.get("TestFile.html"));
 			byte[] message = concat(httpHeader(data.length), data);
-			sendMessage(message, ipAddress, clientPort, serverSocket);
+			goBackN(message, ipAddress, clientPort, serverSocket);
 		}
+	}
+
+
+	private static int nextNum(int seqNum) {
+		return (seqNum + 1) % MAX_SEQ_NUM;
 	}
 
 	private static void goBackN(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
@@ -56,27 +61,31 @@ class Server {
 
 		byte[] receiveData = new byte[1024];
 
-		outerloop:
 		while (readHead < message.length + 1) {
 			sendWindow(message, ipAddr, port, socket, readHead, windowStart);
 			nextSeqNum += WINDOW_SIZE;
+			nextSeqNum = nextSeqNum % MAX_SEQ_NUM;
 			while(windowStart != nextSeqNum) {
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				socket.receive(receivePacket);
 				if (receivePacket.getLength() == 4) { // is ACK
 					int ackNum = ByteBuffer.wrap(receivePacket.getData()).getInt();
 					System.out.println("Ack recieved: seq number " + ackNum);
-					if (ackNum == windowStart + 1) {
-						windowStart ++; //advance window by one when next packet is ack
+					if (ackNum == nextNum(windowStart)) {
+						windowStart = nextNum(windowStart); //advance window by one when next packet is ack
 						readHead += PACKET_SIZE - 8;
 						//set timeout to next packet
+						if (readHead >= message.length) {
+							break;
+						}
 					}
 				} else if (receivePacket.getLength() == 4) { //is NAK
 					nextSeqNum = windowStart; //go back to last successful ACK
-					continue outerloop;
+					break;
 				} 
 			}
 		}
+		System.out.println("Sending null packet");
 		byte[] nullPacket = new byte[1];
 		nullPacket[0] = 0;
 		DatagramPacket sendPacket = new DatagramPacket(nullPacket, 1, ipAddr, port);

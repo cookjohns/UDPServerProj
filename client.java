@@ -15,6 +15,7 @@ class Client extends Thread {
 
   public static final int PACKET_SIZE = 512;
   public static final int TIME_OUT = 1000;
+  public static final int MAX_SEQ_NUM = 64;
 
 	// for writing to file
 	private static boolean readHeader = true;
@@ -98,7 +99,7 @@ class Client extends Thread {
          clientSocket.receive(receivePacket);
          if (receivePacket.getLength() == 1) break;
 
-         try	{
+         try	{   
  	    	    receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket, current);
  			   } catch (InterruptedException e)	{
  				      System.out.print("\nPacket number " + curPacketSeqNum + " is delayed.\n");
@@ -202,7 +203,7 @@ class Client extends Thread {
     Random rand = new Random();
     int val = rand.nextInt(101);
 
-    if (val <= prob) return true;
+    if (val < prob) return true;
     return false;
   }
 
@@ -213,7 +214,7 @@ class Client extends Thread {
     Random rand = new Random();
 		int val = rand.nextInt(101);
 
-		if (val <= prob) return true;
+		if (val < prob) return true;
 		return false;
 	}
 
@@ -224,7 +225,7 @@ class Client extends Thread {
  	Random rand = new Random();
  	int val = rand.nextInt(101);
 
- 	if (val <= prob) return true;
+ 	if (val < prob) return true;
  	return false;
  }
 
@@ -240,6 +241,7 @@ class Client extends Thread {
 
         if (isExpectedSeqNum(receiveData, curPacketSeqNum)) {
           curPacketSeqNum ++;
+          curPacketSeqNum = curPacketSeqNum % MAX_SEQ_NUM;
           sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
           writePacketToFile(receiveData);
 

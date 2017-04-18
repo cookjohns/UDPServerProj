@@ -61,7 +61,7 @@ class Client extends Thread {
 
        //auburn eng tux056
 	     //InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
-       InetAddress ipAddr = InetAddress.getByName("localhost");
+       
        int portNumber = 10008;
 
 	     FileOutputStream filestream = new FileOutputStream("sampleOut.html");

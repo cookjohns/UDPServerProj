@@ -30,23 +30,20 @@ class Server {
 					receiveData, receiveData.length);
 			serverSocket.receive(receivePacket);
 
-			if (receivePacket.getLength() == 4) {
-				System.out.println("Ack/Nack recieved: seq number " + ByteBuffer.wrap(receivePacket.getData()).getInt());
+			if (receivePacket.getLength() == 6) {
+				System.out.println("Ack/Nack recieved: seq number " + ackNum(receivePacket.getData()));
 			} else {
 				String sentence = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength());
 				System.out.println("Message recieved: " + sentence);
+		
+					
+				InetAddress ipAddress = receivePacket.getAddress();
+				int clientPort = receivePacket.getPort();
+
+				byte[] data = Files.readAllBytes(Paths.get("TestFile.html"));
+				byte[] message = concat(httpHeader(data.length), data);
+				goBackN(message, ipAddress, clientPort, serverSocket);
 			}
-			
-			
-			int windowHead = 0;
-
-
-			InetAddress ipAddress = receivePacket.getAddress();
-			int clientPort = receivePacket.getPort();
-
-			byte[] data = Files.readAllBytes(Paths.get("TestFile.html"));
-			byte[] message = concat(httpHeader(data.length), data);
-			goBackN(message, ipAddress, clientPort, serverSocket);
 		}
 	}
 

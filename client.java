@@ -15,6 +15,7 @@ class Client extends Thread {
 
   public static final int PACKET_SIZE = 512;
   public static final int TIME_OUT = 1000;
+  public static final int MAX_SEQ_NUM = 64;
 
 	// for writing to file
 	private static boolean readHeader = true;
@@ -60,7 +61,7 @@ class Client extends Thread {
 
        //auburn eng tux056
 	     //InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
-       InetAddress ipAddr = InetAddress.getByName("localhost");
+       
        int portNumber = 10008;
 
 	     FileOutputStream filestream = new FileOutputStream("sampleOut.html");
@@ -98,7 +99,7 @@ class Client extends Thread {
          clientSocket.receive(receivePacket);
          if (receivePacket.getLength() == 1) break;
 
-         try	{
+         try	{   
  	    	    receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket, current);
  			   } catch (InterruptedException e)	{
  				      System.out.print("\nPacket number " + curPacketSeqNum + " is delayed.\n");
@@ -129,16 +130,18 @@ class Client extends Thread {
 
   /* Sends an ACK packet with byte[] length 4 */
   private static void sendAck(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    System.out.println("Sending ack number " + curPacketSeqNum);
-    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    byte[] seqNum = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    byte[] ackByte = ByteBuffer.allocate(2).putChar('A').array();
+    byte[] array = concat(ackByte, seqNum);
     DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
     clientSocket.send(ack);
   }
 
   /* Sends a NAK packet with byte[] length 4 */
   private static void sendNak(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    System.out.println("Sending nack number " + curPacketSeqNum);
-    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    byte[] seqNum = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
+    byte[] nakByte = ByteBuffer.allocate(2).putChar('N').array();
+    byte[] array = concat(nakByte, seqNum);
     DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
     clientSocket.send(ack);
   }
@@ -148,6 +151,13 @@ class Client extends Thread {
 			saveFile.writeByte(data[i]);
 		}
 	}
+
+  private static byte[] concat(byte[] a, byte[] b) {
+    byte[] out = new byte[a.length + b.length];
+    System.arraycopy(a, 0, out, 0, a.length);
+    System.arraycopy(b, 0, out, a.length, b.length);
+    return out;
+  }
 
   private static boolean validChecksum(byte[] packet) {
     // calculate checksum
@@ -204,7 +214,7 @@ class Client extends Thread {
     Random rand = new Random();
     int val = rand.nextInt(101);
 
-    if (val <= prob) return true;
+    if (val < prob) return true;
     return false;
   }
 
@@ -215,7 +225,7 @@ class Client extends Thread {
     Random rand = new Random();
 		int val = rand.nextInt(101);
 
-		if (val <= prob) return true;
+		if (val < prob) return true;
 		return false;
 	}
 
@@ -226,7 +236,7 @@ class Client extends Thread {
  	Random rand = new Random();
  	int val = rand.nextInt(101);
 
- 	if (val <= prob) return true;
+ 	if (val < prob) return true;
  	return false;
  }
 
@@ -238,22 +248,27 @@ class Client extends Thread {
 
  private static void processPacket(byte[] receiveData, DatagramPacket receivePacket,
     DatagramSocket clientSocket, InetAddress ipAddr, int portNumber) throws Exception {
-    System.out.println("Recieving packet " + getActualSeqNum(receiveData) + ",expecting " + curPacketSeqNum +"\n");
       if (validChecksum(receiveData)) {
 
         if (isExpectedSeqNum(receiveData, curPacketSeqNum)) {
           curPacketSeqNum ++;
+          curPacketSeqNum = curPacketSeqNum % MAX_SEQ_NUM;
           sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
           writePacketToFile(receiveData);
 
           String modifiedSentence = new String(getMessage(receivePacket.getData()));
-          System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");  
+          System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");
+          System.out.println("Recieved in order packet. Sending Ack number " + curPacketSeqNum);  
         } else {
+          sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
           System.out.println("Out of order packet " + getActualSeqNum(receiveData) + " recieved, Expecting " + curPacketSeqNum);
+          System.out.println("Resending ACK number " + curPacketSeqNum);
         }
-        
       }
-      else sendNak(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
+      else {
+        sendNak(clientSocket, curPacketSeqNum, ipAddr, portNumber);
+        System.out.println("Error in packet, sending NAK number " + curPacketSeqNum);
+      }
  }
 
   private static boolean byteShouldBeDamaged() {

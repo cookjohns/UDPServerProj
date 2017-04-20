@@ -18,7 +18,7 @@ class Client extends Thread {
 
 	// for writing to file
 	private static boolean readHeader = true;
-	private static Writer writer;
+	private static DataOutputStream saveFile;
 
   private static InetAddress ipAddr;
   private static int curPacketSeqNum;
@@ -67,7 +67,8 @@ class Client extends Thread {
 	     //InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
        int portNumber = 10008;
 
-	     writer = new FileWriter("sampleOut.html");
+	     FileOutputStream filestream = new FileOutputStream("sampleOut.html");
+	     saveFile = new DataOutputStream(filestream);
 
        DatagramSocket clientSocket = new DatagramSocket();
 
@@ -108,7 +109,8 @@ class Client extends Thread {
  				     else System.out.print("\nPacket number " + curPacketSeqNum + " is lost.\n");
  				 }
        }
-        writer.close();
+        saveFile.close();
+        filestream.close();
         clientSocket.close();
      } catch(Exception e)	{
          System.out.println(e);
@@ -141,11 +143,10 @@ class Client extends Thread {
   }
 
 	private static void writePacketToFile(byte[] data) throws Exception {
-		// for (int i = 4; i < data.length; i++) {
-		// 	saveFile.writeChar(data[i]);
-		// }
-    writer.write(new String(getMessage(data)));	 
-  }
+		for (int i = 4; i < data.length; i++) {
+			saveFile.writeByte(data[i]);
+		}
+	}
 
   private static boolean validChecksum(byte[] packet) {
     // calculate checksum

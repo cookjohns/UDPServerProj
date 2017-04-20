@@ -15,10 +15,7 @@ class Server {
 	public static final int WINDOW_SIZE = 32; // 1/2 MAX_SEQ_NUM
 	public static final int MAX_SEQ_NUM = 64;
 
-
 	public static void main(String[] args) throws Exception {
-
-
 		int portNumber = 10008;
 		DatagramSocket serverSocket = new DatagramSocket(portNumber);
 

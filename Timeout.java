@@ -11,35 +11,16 @@ public class Timeout {
 		//timer.schedule(new RemindTask(this), seconds*1000);
 
 		timer.schedule(new TimerTask() {
-	      @Override
-	      public void run() {
-	        System.out.println("time expired");
-	        running = false;
-	      }
-	    }, seconds*1000);
+	      		@Override
+	      		public void run() {
+	        		System.out.println("time expired");
+	        		running = false;
+	      		}	
+	    	}, seconds*1000);
 	}
 
 	public boolean isRunning() {
 		return running;
-	}
-
-	public void setRunning(boolean r) {
-		running = r;
-	}
-
-	class RemindTask extends TimerTask {
-
-		private Timeout timeout;
-
-		public RemindTask(Timeout timeout) {
-			this.timeout = timeout;
-		}
-
-		public void run() {
-			System.out.println("Callback");
-			timeout.setRunning(false);
-			timer.cancel();
-		}
 	}
 
 	public static void main(String[] args) {

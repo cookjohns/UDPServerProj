@@ -3,7 +3,7 @@ import java.util.TimerTask;
 
 public class Timeout {
 	private Timer timer;
-	private boolean running;
+	public boolean running;
 
 	public Timeout(int seconds) {
 		timer = new Timer();
@@ -15,7 +15,8 @@ public class Timeout {
 	      		public void run() {
 	        		System.out.println("time expired");
 	        		running = false;
-	      		}	
+	      			timer.cancel();
+			}	
 	    	}, seconds*1000);
 	}
 
@@ -25,7 +26,9 @@ public class Timeout {
 
 	public static void main(String[] args) {
 		Timeout timeout = new Timeout(2); 
-		while (timeout.isRunning());	
+		while (timeout.running){
+			System.out.println("Doing stuff");	
+		}	
 		System.out.println("Timeout occured");
 	}
 

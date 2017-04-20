@@ -22,7 +22,6 @@ class Server {
 		byte[] receiveData = new byte[1024];
 		byte[] sendData    = new byte[1024];
 
-		System.out.print("Started server loop\n");
 		while (true) {
 			DatagramPacket receivePacket = new DatagramPacket(
 					receiveData, receiveData.length);
@@ -34,7 +33,7 @@ class Server {
 				String sentence = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength());
 				System.out.println("Message recieved: " + sentence);
 			}
-			
+
 
 			InetAddress ipAddress = receivePacket.getAddress();
 			int clientPort = receivePacket.getPort();

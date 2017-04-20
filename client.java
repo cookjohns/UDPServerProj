@@ -31,7 +31,7 @@ class Client extends Thread {
  		//auburn eng tux056
  		ipAddr = InetAddress.getByName(args[0]);
     // InetAddress ipAddr = InetAddress.getByName("localhost");
-		
+
  		(new Client()).start();
   }
 
@@ -90,7 +90,6 @@ class Client extends Thread {
 
        curPacketSeqNum = 0;
 
-       System.out.print("Started client loop\n");
        while(true) {
          Thread timer = new Thread();
          timer.start();
@@ -123,7 +122,7 @@ class Client extends Thread {
     byte[] out = new byte[packetBytes.length - 8];
     for (int i = 0; i < out.length; i++) {
       out[i] = packetBytes[8 + i];
-    } 
+    }
     return out;
   }
 
@@ -231,7 +230,7 @@ class Client extends Thread {
  }
 
  private static void delayPacket(byte[] packet, DatagramPacket receivePacket, Thread timer) throws Exception {
-		Thread.sleep(delay_time); 		
+		Thread.sleep(delay_time);
 		Thread.currentThread().interrupt();
  }
 
@@ -246,11 +245,11 @@ class Client extends Thread {
           writePacketToFile(receiveData);
 
           String modifiedSentence = new String(getMessage(receivePacket.getData()));
-          System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");  
+          System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");
         } else {
           System.out.println("Out of order packet " + getActualSeqNum(receiveData) + " recieved, Expecting " + curPacketSeqNum);
         }
-        
+
       }
       else sendNak(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
  }

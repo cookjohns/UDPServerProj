@@ -19,7 +19,7 @@ class Client extends Thread {
 
 	// for writing to file
 	private static boolean readHeader = true;
-	private static DataOutputStream saveFile;
+	private static Writer writer;
 
   private static InetAddress ipAddr;
   private static int curPacketSeqNum;
@@ -64,8 +64,7 @@ class Client extends Thread {
        
        int portNumber = 10008;
 
-	     FileOutputStream filestream = new FileOutputStream("sampleOut.html");
-	     saveFile = new DataOutputStream(filestream);
+	     writer = new FileWriter("sampleOut.html");
 
        DatagramSocket clientSocket = new DatagramSocket();
 
@@ -111,8 +110,7 @@ class Client extends Thread {
  				 }
  				 timer.stop();
        }
-        saveFile.close();
-        filestream.close();
+        writer.close();
         clientSocket.close();
      } catch(Exception e)	{
          System.out.println(e);
@@ -147,10 +145,11 @@ class Client extends Thread {
   }
 
 	private static void writePacketToFile(byte[] data) throws Exception {
-		for (int i = 4; i < data.length; i++) {
-			saveFile.writeByte(data[i]);
-		}
-	}
+		// for (int i = 4; i < data.length; i++) {
+		// 	saveFile.writeChar(data[i]);
+		// }
+    writer.write(new String(getMessage(data)));	 
+  }
 
   private static byte[] concat(byte[] a, byte[] b) {
     byte[] out = new byte[a.length + b.length];

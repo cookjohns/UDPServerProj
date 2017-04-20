@@ -2,7 +2,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class Timeout {
-	private Timer timer;
+	public Timer timer;
 	public boolean running;
 
 	public Timeout(int seconds) {

@@ -161,7 +161,7 @@ class Client {
 		if (packetShouldBeLost(lostProb)) return null;
 
 		if (packetShouldBeDelayed(delayProb)) {
-      //delayPacket(packet, receivePacket);
+      delayPacket(packet, receivePacket);
     }
 
     if (packetShouldBeDamaged(damageProb)) {
@@ -183,6 +183,10 @@ class Client {
     }
     // else packet should not be damaged
     return packet;
+  }
+
+  private static void delayPacket(byte[] packet, DatagramPacket receivePacket) {
+
   }
 
   private static boolean packetShouldBeDamaged(double damageProb) {

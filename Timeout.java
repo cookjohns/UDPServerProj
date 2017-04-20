@@ -5,6 +5,7 @@ public class Timeout {
 	public Timer timer;
 	public boolean running;
 
+
 	public Timeout(int seconds) {
 		timer = new Timer();
 		running = true;

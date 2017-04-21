@@ -267,14 +267,14 @@ class Client {
   }
 
   private static boolean packetDelayed(double delayProb)  {
-  // get probability as percentage in range 0-100
-    double prob = delayProb * 100;
-  // get random int in range 0-100
-  Random rand = new Random();
-  int val = rand.nextInt(101);
+    // get probability as percentage in range 0-100
+      double prob = delayProb * 100;
+    // get random int in range 0-100
+    Random rand = new Random();
+    int val = rand.nextInt(101);
 
-  if (val < prob) return true;
-  return false;
+    if (val < prob) return true;
+    return false;
  }
 
  private static void processPacket(byte[] receiveData, DatagramPacket receivePacket,

@@ -3,8 +3,7 @@ import java.net.*;
 import java.nio.file.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Arrays;
+import java.util.*;
 
 // port #s 10008-10011
 
@@ -15,7 +14,15 @@ class Server {
 	public static final int PACKET_SIZE = 512;
 	public static final int WINDOW_SIZE = 32; // 1/2 MAX_SEQ_NUM
 	public static final int MAX_SEQ_NUM = 64;
-	public static final int TIMEOUT_LEN = 2; //seconds
+	public static final int TIMEOUT_LEN = 10; //milleseconds
+
+
+	private static int readHead;
+	private static int windowStart;
+
+	private static long lastPacketTime;
+	private static long packetElapseTime;
+
 
 	public static void main(String[] args) throws Exception {
 
@@ -65,25 +72,43 @@ class Server {
 	}
 
 	private static void goBackN(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket) throws Exception {
-		int readHead = 0;
-		int windowStart = 0;
+		readHead = 0;
+		windowStart = 0;
 		int nextSeqNum = 0;
 
 		byte[] receiveData = new byte[1024];
 
+
+		
+
 		while (readHead < message.length + 1) {
 			sendWindow(message, ipAddr, port, socket, readHead, windowStart);
+		
 			nextSeqNum += WINDOW_SIZE;
 			nextSeqNum = nextSeqNum % MAX_SEQ_NUM;
+			
 			while(windowStart != nextSeqNum) {
+
+				if (System.nanoTime() - lastPacketTime > TIMEOUT_LEN * 100000) {
+					//timeout occured
+					System.out.println("timeout");
+					nextSeqNum = windowStart;
+					break;
+				}
+
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				socket.receive(receivePacket);
 				byte[] data = receivePacket.getData();
 				int ackNum = ackNum(data);
+
+
 				if (isAck(data)) { // is ACK
 					System.out.println("Ack recieved: seq number " + ackNum);
 					if (ackNum == nextNum(windowStart)) {
 						windowStart = nextNum(windowStart); //advance window by one when next packet is ack
+						lastPacketTime += packetElapseTime; //reset timeout timer to net packet
+	
+
 						System.out.println("Moving window up to " + windowStart);
 						readHead += PACKET_SIZE - 8;
 						//set timeout to next packet
@@ -98,6 +123,7 @@ class Server {
 				} 
 			}
 		}
+	
 		System.out.println("Sending null packet");
 		byte[] nullPacket = new byte[1];
 		nullPacket[0] = 0;
@@ -138,13 +164,18 @@ class Server {
 	}
 
 	private static void sendWindow(byte[] message, InetAddress ipAddr, int port, DatagramSocket socket, int offset, int windowStart) throws Exception {
+		
 		int packetSeqNum = windowStart;
 		int readHead = offset - 8;
 
 		int counter = 0;
 		System.out.println("Sending window " + windowStart + " to " + (windowStart + WINDOW_SIZE) % MAX_SEQ_NUM);
+
+		lastPacketTime = System.nanoTime();
 		while (readHead < (message.length + 1 - 8) && counter < WINDOW_SIZE) {
+		 	if (counter == 1) packetElapseTime = System.nanoTime() - lastPacketTime;
 			counter ++;
+			if (counter == 1);
 			byte[] packet = nextPacket(message, readHead, packetSeqNum++);
 			DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, ipAddr, port);
 			socket.send(sendPacket);

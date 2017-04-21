@@ -194,6 +194,8 @@ class Client {
 	      		public void run() {
 	        		System.out.println("time expired");
 	      			timer.cancel();
+              processPacket(receiveData, receivePacket, clientSocket,
+                 portNumber);
 			}
     }, delay_time*1000);
   }

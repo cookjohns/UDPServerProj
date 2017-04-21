@@ -93,7 +93,8 @@ class Client {
        if (receivePacket.getLength() == 1) break;
 
        try	{
-          receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket);
+          receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket,
+            clientSocket, portNumber);
        } catch (InterruptedException e)	{
          // WON'T HAPPEN UNTIL WE IMPLEMENT SOMETHING THAT THROWS AN EXCEPTION
             System.out.print("\nPacket number " + curPacketSeqNum + " is delayed.\n");
@@ -159,11 +160,12 @@ class Client {
   }
 
   private static byte[] gremlin(double lostProb, double damageProb,
-			double delayProb, byte[] packet, DatagramPacket receivePacket) throws Exception {
+			double delayProb, byte[] packet, DatagramPacket receivePacket,
+      DatagramSocket clientSocket, int portNumber) throws Exception {
 		if (packetShouldBeLost(lostProb)) return null;
 
 		if (packetShouldBeDelayed(delayProb)) {
-      delayPacket(packet, receivePacket);
+      delayPacket(packet, receivePacket, clientSocket, portNumber);
     }
 
     if (packetShouldBeDamaged(damageProb)) {
@@ -187,15 +189,20 @@ class Client {
     return packet;
   }
 
-  private static void delayPacket(byte[] packet, DatagramPacket receivePacket) {
+  private static void delayPacket(byte[] packet, DatagramPacket receivePacket,
+    DatagramSocket clientSocket, int portNumber) {
     Timer timer = new Timer();
     timer.schedule(new TimerTask() {
 	      		@Override
 	      		public void run() {
 	        		System.out.println("time expired");
 	      			timer.cancel();
-              processPacket(receiveData, receivePacket, clientSocket,
-                 portNumber);
+              try {
+                processPacket(packet, receivePacket, clientSocket,
+                   portNumber);
+              } catch (Exception e) {
+                System.out.print(e);
+              }
 			}
     }, delay_time*1000);
   }

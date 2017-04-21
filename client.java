@@ -5,6 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Random;
 import java.util.HashSet;
+import java.util.Timer;
+import java.util.TimerTask;
 
 // port #s 10008-10011
 
@@ -186,7 +188,14 @@ class Client {
   }
 
   private static void delayPacket(byte[] packet, DatagramPacket receivePacket) {
-
+    Timer timer = new Timer();
+    timer.schedule(new TimerTask() {
+	      		@Override
+	      		public void run() {
+	        		System.out.println("time expired");
+	      			timer.cancel();
+			}
+    }, delay_time*1000);
   }
 
   private static boolean packetShouldBeDamaged(double damageProb) {

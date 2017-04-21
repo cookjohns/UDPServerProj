@@ -37,8 +37,12 @@ class Server {
 		while (true) {
 			DatagramPacket receivePacket = new DatagramPacket(
 					receiveData, receiveData.length);
-			serverSocket.receive(receivePacket);
-
+			
+			try {
+				serverSocket.receive(receivePacket);
+			} catch (SocketTimeoutException e) {
+				continue;
+			}
 			if (receivePacket.getLength() == 6) {
 				System.out.println("Ack/Nack recieved: seq number " + ackNum(receivePacket.getData()));
 			} else {
@@ -89,15 +93,28 @@ class Server {
 			
 			while(windowStart != nextSeqNum) {
 
-				if (System.nanoTime() - lastPacketTime > TIMEOUT_LEN * 100000) {
+				if (System.nanoTime() - lastPacketTime > TIMEOUT_LEN * 1000000) {
 					//timeout occured
 					System.out.println("timeout");
 					nextSeqNum = windowStart;
 					break;
 				}
 
+				
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-				socket.receive(receivePacket);
+				
+				socket.setSoTimeout(TIMEOUT_LEN);
+				try {
+					try {
+						socket.receive(receivePacket);
+					} catch (SocketTimeoutException e) {
+						continue;
+					}
+				} catch (SocketException e) {
+					return;
+				}
+					
+
 				byte[] data = receivePacket.getData();
 				int ackNum = ackNum(data);
 

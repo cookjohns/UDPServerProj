@@ -37,12 +37,12 @@ class Server {
 			} else {
 				String sentence = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength());
 				System.out.println("Message recieved: " + sentence);
-		
-					
+
+
 				InetAddress ipAddress = receivePacket.getAddress();
 				int clientPort = receivePacket.getPort();
 
-				byte[] data = Files.readAllBytes(Paths.get("TestFile.html"));
+				byte[] data = Files.readAllBytes(Paths.get("TestFileSmall.html"));
 				byte[] message = concat(httpHeader(data.length), data);
 				goBackN(message, ipAddress, clientPort, serverSocket);
 			}
@@ -57,7 +57,7 @@ class Server {
 	private static Boolean isAck(byte[] data) {
 		byte[] ackByte = Arrays.copyOfRange(data, 0, 2);
 		return (new String(ackByte).contains("A"));
-	}	
+	}
 
 	private static int ackNum(byte[] data) {
 		byte[] seqNum = Arrays.copyOfRange(data, 2, 6);
@@ -95,7 +95,7 @@ class Server {
 					System.out.println("Nack recieved: seq number " + ackNum);
 					nextSeqNum = windowStart; //go back to last successful ACK
 					break;
-				} 
+				}
 			}
 		}
 		System.out.println("Sending null packet");

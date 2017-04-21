@@ -78,7 +78,7 @@ class Client {
 
      //byte[] message = Files.readAllBytes(Paths.get("message.txt"));
 
-     String request = "GET TestFile.html HTTP/1.0";
+     String request = "GET TestFileSmall.html HTTP/1.0";
      sendData = request.getBytes();
 
      DatagramPacket sendPacket = new DatagramPacket(
@@ -106,7 +106,7 @@ class Client {
               portNumber);
            else System.out.print("\nPacket number " + curPacketSeqNum + " is lost.\n");
        }
-        
+
     }
     writer.close();
     clientSocket.close();
@@ -116,7 +116,7 @@ class Client {
     byte[] out = new byte[packetBytes.length - 8];
     for (int i = 0; i < out.length; i++) {
       out[i] = packetBytes[8 + i];
-    } 
+    }
     return out;
   }
 
@@ -142,7 +142,7 @@ class Client {
     // for (int i = 4; i < data.length; i++) {
     //  saveFile.writeChar(data[i]);
     // }
-    writer.write(new String(getMessage(data)));  
+    writer.write(new String(getMessage(data)));
   }
 
   private static byte[] concat(byte[] a, byte[] b) {
@@ -289,16 +289,16 @@ class Client {
 
           String modifiedSentence = new String(getMessage(receivePacket.getData()));
           System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");
-          System.out.println("Recieved in order packet. Sending Ack number " + curPacketSeqNum);  
+          System.out.println("Recieved in order packet. Sending Ack number " + curPacketSeqNum);
         } else {
           sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
-          System.out.println("Out of order packet " + getActualSeqNum(receiveData) + " recieved, Expecting " + curPacketSeqNum);
-          System.out.println("Resending ACK number " + curPacketSeqNum);
+          // System.out.println("Out of order packet " + getActualSeqNum(receiveData) + " recieved, Expecting " + curPacketSeqNum);
+          // System.out.println("Resending ACK number " + curPacketSeqNum);
         }
       }
       else {
         sendNak(clientSocket, curPacketSeqNum, ipAddr, portNumber);
-        System.out.println("Error in packet, sending NAK number " + curPacketSeqNum);
+        // System.out.println("Error in packet, sending NAK number " + curPacketSeqNum);
       }
  }
 

@@ -135,6 +135,7 @@ class Server {
 					}
 				} else { //is NAK
 					System.out.println("Nack recieved: seq number " + ackNum);
+					windowStart = ackNum;
 					nextSeqNum = windowStart; //go back to last successful ACK
 					break;
 				} 

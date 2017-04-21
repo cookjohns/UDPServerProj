@@ -23,6 +23,7 @@ class Client {
   private static Writer writer;
 
   private static int delay_time;
+  private static boolean done;
 
   private static InetAddress ipAddr;
   private static int curPacketSeqNum;
@@ -88,12 +89,15 @@ class Client {
 
      curPacketSeqNum = 0;
 
-
+     done = false;
      while(true) {
        receiveData = new byte[PACKET_SIZE];
        DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
        clientSocket.receive(receivePacket);
-       if (receivePacket.getLength() == 1) break;
+       if (receivePacket.getLength() == 1) {
+		done = true;
+		break;
+	}
 
        try	{
           receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket,
@@ -205,6 +209,7 @@ class Client {
 
   private static void delayPacket(byte[] packet, DatagramPacket receivePacket,
     DatagramSocket clientSocket, int portNumber) {
+    if (done) return;
     Timer timer = new Timer();
     timer.schedule(new TimerTask() {
 	      		@Override

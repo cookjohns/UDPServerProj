@@ -66,8 +66,7 @@ class Client {
      //InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
      int portNumber = 10008;
 
-     FileOutputStream filestream = new FileOutputStream("sampleOut.html");
-     saveFile = new DataOutputStream(filestream);
+     writer = new FileWriter("sampleOut.html");
 
      DatagramSocket clientSocket = new DatagramSocket();
 
@@ -89,28 +88,28 @@ class Client {
 
      curPacketSeqNum = 0;
 
-     System.out.print("Started client loop\n");
-       while(true) {
-        
-         receiveData = new byte[PACKET_SIZE];
-         
-         clientSocket.receive(receivePacket);
-         if (receivePacket.getLength() == 1) break;
 
-         try  {   
-            receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket);
-         } catch (InterruptedException e) {
-              System.out.print("\nPacket number " + curPacketSeqNum + " is delayed.\n");
-              timer.sleep(TIME_OUT / 2);
-         } finally  {
-             if (receiveData != null) processPacket(receiveData, receivePacket, clientSocket,
-                ipAddr, portNumber);
-             else System.out.print("\nPacket number " + curPacketSeqNum + " is lost.\n");
-         }
-         timer.stop();
+     while(true) {
+       receiveData = new byte[PACKET_SIZE];
+       DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
+       clientSocket.receive(receivePacket);
+       if (receivePacket.getLength() == 1) break;
+
+       try	{
+          receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket,
+            clientSocket, portNumber);
+       } catch (InterruptedException e)	{
+         // WON'T HAPPEN UNTIL WE IMPLEMENT SOMETHING THAT THROWS AN EXCEPTION
+            System.out.print("\nPacket number " + curPacketSeqNum + " is delayed.\n");
+       } finally	{
+           if (receiveData != null) processPacket(receiveData, receivePacket, clientSocket,
+              portNumber);
+           else System.out.print("\nPacket number " + curPacketSeqNum + " is lost.\n");
        }
-        writer.close();
-        clientSocket.close();
+        
+    }
+    writer.close();
+    clientSocket.close();
   }
 
   private static byte[] getMessage(byte[] packetBytes) {
@@ -174,12 +173,13 @@ class Client {
   }
 
   private static byte[] gremlin(double lostProb, double damageProb,
+			double delayProb, byte[] packet, DatagramPacket receivePacket,
+      DatagramSocket clientSocket, int portNumber) throws Exception {
 
-			double delayProb, byte[] packet, DatagramPacket receivePacket) throws Exception {
 		if (packetShouldBeLost(lostProb)) return null;
 
 		if (packetShouldBeDelayed(delayProb)) {
-      delayPacket(packet, receivePacket);
+      delayPacket(packet, receivePacket, clientSocket, portNumber);
     }
 
     if (packetShouldBeDamaged(damageProb)) {
@@ -203,15 +203,21 @@ class Client {
     return packet;
   }
 
-  private static void delayPacket(byte[] packet, DatagramPacket receivePacket) {
+  private static void delayPacket(byte[] packet, DatagramPacket receivePacket,
+    DatagramSocket clientSocket, int portNumber) {
     Timer timer = new Timer();
     timer.schedule(new TimerTask() {
 	      		@Override
 	      		public void run() {
 	        		System.out.println("time expired");
 	      			timer.cancel();
-              processPacket(receiveData, receivePacket, clientSocket,
-                 portNumber);
+              try {
+
+                if (packet != null) processPacket(packet, receivePacket, clientSocket,
+                   portNumber);
+              } catch (Exception e) {
+                System.out.print(e);
+              }
 			}
     }, delay_time*1000);
   }
@@ -226,6 +232,28 @@ class Client {
     if (val < prob) return true;
     return false;
   }
+
+    private static boolean packetShouldBeLost(double lostProb)  {
+      // get probability as percentage in range 0-100
+      double prob = lostProb * 100;
+      // get random int in range 0-100
+      Random rand = new Random();
+      int val = rand.nextInt(101);
+
+      if (val < prob) return true;
+      return false;
+    }
+
+   private static boolean packetShouldBeDelayed(double delayProb) {
+      // get probability as percentage in range 0-100
+        double prob = delayProb * 100;
+      // get random int in range 0-100
+        Random rand = new Random();
+        int val = rand.nextInt(101);
+
+        if (val < prob) return true;
+        return false;
+     }
 
   private static boolean packetLost(double lostProb)  {
     // get probability as percentage in range 0-100
@@ -250,7 +278,7 @@ class Client {
  }
 
  private static void processPacket(byte[] receiveData, DatagramPacket receivePacket,
-    DatagramSocket clientSocket, InetAddress ipAddr, int portNumber) throws Exception {
+    DatagramSocket clientSocket, int portNumber) throws Exception {
       if (validChecksum(receiveData)) {
 
         if (isExpectedSeqNum(receiveData, curPacketSeqNum)) {

@@ -14,12 +14,11 @@ import java.lang.Thread;
 class Client extends Thread {
 
   public static final int PACKET_SIZE = 512;
-  public static final int TIME_OUT = 1000;
-  public static final int MAX_SEQ_NUM = 64;
+  public static int delay_time;
 
 	// for writing to file
 	private static boolean readHeader = true;
-	private static Writer writer;
+	private static DataOutputStream saveFile;
 
   private static InetAddress ipAddr;
   private static int curPacketSeqNum;
@@ -57,14 +56,19 @@ class Client extends Thread {
  			     System.out.print("Enter delayed packet probability (in range 0-1): ");
  			     delayProb = Double.parseDouble(input.readLine());
  		   } while (delayProb < 0 || delayProb > 1);
+			// get delay time
+			do	{
+				System.out.print("Enter delay time (in milliseconds): ");
+				delay_time = Integer.parseInt(input.readLine());
+			} while (delay_time < 0);
        input.close();
 
        //auburn eng tux056
 	     //InetAddress ipAddr = InetAddress.getByName("131.204.14.56");
-       
        int portNumber = 10008;
 
-	     writer = new FileWriter("sampleOut.html");
+	     FileOutputStream filestream = new FileOutputStream("sampleOut.html");
+	     saveFile = new DataOutputStream(filestream);
 
        DatagramSocket clientSocket = new DatagramSocket();
 
@@ -86,9 +90,6 @@ class Client extends Thread {
 
        curPacketSeqNum = 0;
 
-       final Thread current = Thread.currentThread();
-
-       System.out.print("Started client loop\n");
        while(true) {
          Thread timer = new Thread();
          timer.start();
@@ -98,19 +99,18 @@ class Client extends Thread {
          clientSocket.receive(receivePacket);
          if (receivePacket.getLength() == 1) break;
 
-         try	{   
- 	    	    receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket, current);
+         try	{
+ 	    	    receiveData = gremlin(lostProb, damageProb, delayProb, receiveData, receivePacket, timer);
  			   } catch (InterruptedException e)	{
  				      System.out.print("\nPacket number " + curPacketSeqNum + " is delayed.\n");
- 					    timer.sleep(TIME_OUT / 2);
  				 } finally	{
  				     if (receiveData != null) processPacket(receiveData, receivePacket, clientSocket,
-                ipAddr, portNumber);
+                portNumber);
  				     else System.out.print("\nPacket number " + curPacketSeqNum + " is lost.\n");
  				 }
- 				 timer.stop();
        }
-        writer.close();
+        saveFile.close();
+        filestream.close();
         clientSocket.close();
      } catch(Exception e)	{
          System.out.println(e);
@@ -122,41 +122,31 @@ class Client extends Thread {
     byte[] out = new byte[packetBytes.length - 8];
     for (int i = 0; i < out.length; i++) {
       out[i] = packetBytes[8 + i];
-    } 
+    }
     return out;
   }
 
   /* Sends an ACK packet with byte[] length 4 */
   private static void sendAck(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    byte[] seqNum = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
-    byte[] ackByte = ByteBuffer.allocate(2).putChar('A').array();
-    byte[] array = concat(ackByte, seqNum);
+    System.out.println("Sending ack number " + curPacketSeqNum);
+    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
     DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
     clientSocket.send(ack);
   }
 
   /* Sends a NAK packet with byte[] length 4 */
   private static void sendNak(DatagramSocket clientSocket, int curPacketSeqNum, InetAddress ipAddr, int portNumber) throws IOException {
-    byte[] seqNum = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
-    byte[] nakByte = ByteBuffer.allocate(2).putChar('N').array();
-    byte[] array = concat(nakByte, seqNum);
+    System.out.println("Sending nack number " + curPacketSeqNum);
+    byte[] array = ByteBuffer.allocate(4).putInt(curPacketSeqNum).array();
     DatagramPacket ack = new DatagramPacket(array, array.length, ipAddr, portNumber);
     clientSocket.send(ack);
   }
 
 	private static void writePacketToFile(byte[] data) throws Exception {
-		// for (int i = 4; i < data.length; i++) {
-		// 	saveFile.writeChar(data[i]);
-		// }
-    writer.write(new String(getMessage(data)));	 
-  }
-
-  private static byte[] concat(byte[] a, byte[] b) {
-    byte[] out = new byte[a.length + b.length];
-    System.arraycopy(a, 0, out, 0, a.length);
-    System.arraycopy(b, 0, out, a.length, b.length);
-    return out;
-  }
+		for (int i = 4; i < data.length; i++) {
+			saveFile.writeByte(data[i]);
+		}
+	}
 
   private static boolean validChecksum(byte[] packet) {
     // calculate checksum
@@ -180,10 +170,10 @@ class Client extends Thread {
 
   private static byte[] gremlin(double lostProb, double damageProb,
 			double delayProb, byte[] packet, DatagramPacket receivePacket,
-			Thread current) throws Exception {
-		if (packetLost(lostProb)) return null;
+			Thread timer) throws Exception {
+		if (packetShouldBeLost(lostProb)) return null;
 
-		if (packetDelayed(delayProb)) delayPacket(packet, receivePacket, current);
+		if (packetShouldBeDelayed(delayProb)) delayPacket(packet, receivePacket, timer);
 
     if (packetShouldBeDamaged(damageProb)) {
       int numBytesToDamage = determineNumBytesToBeDamaged();
@@ -217,7 +207,7 @@ class Client extends Thread {
     return false;
   }
 
-  private static boolean packetLost(double lostProb)	{
+  private static boolean packetShouldBeLost(double lostProb)	{
     // get probability as percentage in range 0-100
  	  double prob = lostProb * 100;
   	// get random int in range 0-100
@@ -228,46 +218,40 @@ class Client extends Thread {
 		return false;
 	}
 
-  private static boolean packetDelayed(double delayProb)	{
+  private static boolean packetShouldBeDelayed(double delayProb)	{
  	// get probability as percentage in range 0-100
   	double prob = delayProb * 100;
  	// get random int in range 0-100
- 	Random rand = new Random();
- 	int val = rand.nextInt(101);
+ 		Random rand = new Random();
+ 		int val = rand.nextInt(101);
 
- 	if (val < prob) return true;
- 	return false;
+ 		if (val < prob) return true;
+ 		return false;
  }
 
- private static void delayPacket(byte[] packet, DatagramPacket receivePacket, Thread current) throws Exception {
- 		Thread.sleep(TIME_OUT);
- 		Thread.sleep(TIME_OUT);
- 		current.interrupt();
+ private static void delayPacket(byte[] packet, DatagramPacket receivePacket, Thread timer) throws Exception {
+		Thread.sleep(delay_time);
+		Thread.currentThread().interrupt();
  }
 
  private static void processPacket(byte[] receiveData, DatagramPacket receivePacket,
-    DatagramSocket clientSocket, InetAddress ipAddr, int portNumber) throws Exception {
+    DatagramSocket clientSocket, int portNumber) throws Exception {
+    System.out.println("Recieving packet " + getActualSeqNum(receiveData) + ",expecting " + curPacketSeqNum +"\n");
       if (validChecksum(receiveData)) {
 
         if (isExpectedSeqNum(receiveData, curPacketSeqNum)) {
           curPacketSeqNum ++;
-          curPacketSeqNum = curPacketSeqNum % MAX_SEQ_NUM;
           sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
           writePacketToFile(receiveData);
 
           String modifiedSentence = new String(getMessage(receivePacket.getData()));
           System.out.println("\nFROM SERVER:\n" + modifiedSentence + "\n");
-          System.out.println("Recieved in order packet. Sending Ack number " + curPacketSeqNum);  
         } else {
-          sendAck(clientSocket, curPacketSeqNum, ipAddr, portNumber);
           System.out.println("Out of order packet " + getActualSeqNum(receiveData) + " recieved, Expecting " + curPacketSeqNum);
-          System.out.println("Resending ACK number " + curPacketSeqNum);
         }
+
       }
-      else {
-        sendNak(clientSocket, curPacketSeqNum, ipAddr, portNumber);
-        System.out.println("Error in packet, sending NAK number " + curPacketSeqNum);
-      }
+      else sendNak(clientSocket, curPacketSeqNum+1, ipAddr, portNumber);
  }
 
   private static boolean byteShouldBeDamaged() {
